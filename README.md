@@ -49,7 +49,7 @@ Note:
 - Each pixel in the images is modeled independently. The likelihood is Bernoulli
   for binary images (MNIST), and discretized mixture of logistics with 10 
   components [6] otherwise.
-- Statically binarized MNIST is from Larochelle's website.
+- Statically binarized MNIST is retrieved from Hugo Larochelle's website, see [7].
 - CelebA is rescaled and cropped to 64x64 - see code for details.
 
 ## Samples
@@ -208,3 +208,7 @@ ICLR 2016
 [6] T Salimans, A Karpathy, X Chen, DP Kingma.
 _PixelCNN++: Improving the PixelCNN with Discretized Logistic Mixture Likelihood and Other Modifications_,
 ICLR 2017
+
+[7] H Larochelle, I Murray.
+_The neural autoregressive distribution estimator_,
+AISTATS 2011
