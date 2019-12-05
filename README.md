@@ -21,6 +21,12 @@ CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 3
 
 (For CelebA, it's necessary to modify the path in `experiment.DatasetLoader`.)
 
+Tested with:
+- `python` 3.6.8
+- `torch` 1.3.1
+- `torchvision` 0.4.2
+- `numpy` 1.17.4
+
 
 ## Likelihood results
 
@@ -32,7 +38,7 @@ Results on standard datasets. Final results on SVHN, CIFAR, and CelebA coming so
 | binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
 | SVHN            | 15         | 4149 (1.95)  | 4103 (1.93)   |                |
-| CIFAR10         | 15         | 7236 (3.40)  | 7176  (3.37)  |                |
+| CIFAR10         | 15         | 7236 (3.40)  | 7176  (3.37)  | 7160 (3.36)    |
 | CelebA          | 20         | 20873 (2.45) |  20743 (2.44) |                |
 
 Note:
