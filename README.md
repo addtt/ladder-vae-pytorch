@@ -28,14 +28,14 @@ CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 3
 
 Results on standard datasets. Final results on SVHN, CIFAR, and CelebA coming soon.
 
-|  dataset        | num layers | ELBO, 1 iws  | ELBO, 100 iws | ELBO, 1000 iws |   comments   | 
-| --------------- |:----------:|:------------:|:-------------:|:--------------:| ------------ |
-| binarized MNIST | 12         | 80.50        | 78.50         | 78.30          | freebits=1.0 |
-| binarized MNIST | 6          | 80.74        | 78.65         | 78.52          | freebits=0.5 |
-| binarized MNIST | 3          | 82.14        | 79.47         | 79.24          | freebits=0.5 |
-| SVHN            | 15         | 4149 (1.95)  | 4103 (1.93)   |                | freebits=1.0 |
-| CIFAR10         | 15         | 7236 (3.40)  | 7176  (3.37)  |                | freebits=1.0 |
-| CelebA          | 20         | 20873 (2.45) |  20743 (2.44) |                | freebits=1.0 |
+|  dataset        | num layers | ELBO, 1 iws  | ELBO, 100 iws | ELBO, 1000 iws |
+| --------------- |:----------:|:------------:|:-------------:|:--------------:|
+| binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
+| binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
+| binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
+| SVHN            | 15         | 4149 (1.95)  | 4103 (1.93)   |                |
+| CIFAR10         | 15         | 7236 (3.40)  | 7176  (3.37)  |                |
+| CelebA          | 20         | 20873 (2.45) |  20743 (2.44) |                |
 
 Note:
 - Bits per dimension in brackets when applicable.
@@ -150,6 +150,8 @@ I did not perform an extensive hyperparameter search, but this worked pretty wel
 - Learned prior of the top layer (`--learn-top-prior`).
 - A form of data-dependent initialization of weights (`--data-dep-init`).
   See code for details.
+- freebits=1.0 in experiments with more than 6 stochastic layers, and 0.5 for
+  smaller models.
 - For everything else, see defaults (`_parse_args()` in `experiment.py`).
 
 With these settings, the number of parameters is roughly 1M per stochastic
