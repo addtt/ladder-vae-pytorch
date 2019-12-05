@@ -1,19 +1,17 @@
 # Ladder Variational Autoencoders (LVAE)
 
-PyTorch implementation of Ladder Variational Autoencoders (LVAE) [1].
-
-The generative and inference models are as follows:
+PyTorch implementation of Ladder Variational Autoencoders (LVAE) [1]:
 
 ![LVAE equation](_readme_figs/lvae_eq.png)
 
 where the variational distributions _q_ at each layer are multivariate Normal
 with diagonal covariance.
 
-Skip connections in the generative path (conditioning on _all_ layers above
-rather than only on _the_ layer above) are for example used in [2]. Other 
-significant implementation differences from [1] include: spatial (convolutional) 
-latent variables, (deterministic) residual blocks, and free bits [3] instead 
-of beta annealing [4].
+*Significant differences from [1]* include:
+- skip connections in the generative path: conditioning on _all_ layers above
+rather than only on _the_ layer above (see for example [2])
+- spatial (convolutional) latent variables
+- free bits [3] instead of beta annealing [4]
 
 Example to run MNIST:
 
