@@ -7,7 +7,7 @@ PyTorch implementation of Ladder Variational Autoencoders (LVAE) [1]:
 where the variational distributions _q_ at each layer are multivariate Normal
 with diagonal covariance.
 
-*Significant differences from [1]* include:
+**Significant differences from [1]** include:
 - skip connections in the generative path: conditioning on _all_ layers above
 rather than only on _the_ layer above (see for example [2])
 - spatial (convolutional) latent variables
