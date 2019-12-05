@@ -128,9 +128,11 @@ even within a row.
 #### CelebA: layers 6, 11, 16, and 20 (top)
 
 ![CelebA layers 6](_readme_figs/layers_celeba/sample_mode_layer5.png)
+
 ![CelebA layers 11](_readme_figs/layers_celeba/sample_mode_layer10.png)
 
 ![CelebA layers 16](_readme_figs/layers_celeba/sample_mode_layer15.png)
+
 ![CelebA layers 20](_readme_figs/layers_celeba/sample_mode_layer19.png)
 
 
