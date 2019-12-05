@@ -19,13 +19,13 @@ Example to run MNIST:
 CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 32 --downsample 0 0 1 0 0 1 0 0 0 1 0 0 --nonlin elu --skip --blocks-per-layer 4 --gated --test-batch-size 2000 --freebits 1.0 --tr-log-interv 10000 --ts-log-interv 10000 --ckpt-interv 100000 --ll-interv 50000 --ll-samples 100 --learn-top-prior --data-dep-init --seed 42 --dataset static_mnist
 ```
 
-(For CelebA, it's necessary to modify the path in `experiment.DatasetLoader`.)
+(For CelebA, it's necessary to modify the path in `experiment.DatasetLoader`)
 
 Tested with:
-- `python` 3.6.8
-- `torch` 1.3.1
-- `torchvision` 0.4.2
-- `numpy` 1.17.4
+- `python 3.6.8`
+- `torch 1.3.1`
+- `torchvision 0.4.2`
+- `numpy 1.17.4`
 
 
 ## Likelihood results
