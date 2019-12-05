@@ -55,7 +55,7 @@ Note:
 
 ## Samples
 
-#### MNIST
+#### Binarized MNIST
 
 ![MNIST samples](_readme_figs/mnist_sample_1.png)
 
@@ -106,7 +106,7 @@ more variability in each row as we move to higher layers. When the sampling
 happens in the top layer (_i = L_), all samples are completely independent, 
 even within a row.
 
-#### MNIST: layers 4, 8, 10, and 12 (top)
+#### Binarized MNIST: layers 4, 8, 10, and 12 (top)
 
 ![MNIST layers 4](_readme_figs/layers_mnist/sample_mode_layer3.png)&nbsp;&nbsp;
 ![MNIST layers 8](_readme_figs/layers_mnist/sample_mode_layer7.png)
