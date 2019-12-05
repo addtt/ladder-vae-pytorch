@@ -1,0 +1,9 @@
+.idea/
+.DS_Store
+__pycache__/
+checkpoints/
+data/
+evaluation_results/
+results/
+tensorboard_logs/
+

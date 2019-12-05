@@ -1,0 +1,19 @@
+\begin{align*}
+p_{\theta}(\mathbf{x}, \mathbf{z}) &= p_{\theta}(\mathbf{z}) \ p_{\theta}(\mathbf{x} \;|\; \mathbf{z})\\[.7em]
+p_{\theta}(\mathbf{z}) &=p_{\theta}\left(\mathbf{z}_{L}\right) \ \prod_{i=1}^{L-1} p_{\theta}\left(\mathbf{z}_{i} \;|\; \mathbf{z}_{> i}\right) \\
+q_{\phi, \theta}(\mathbf{z} \;|\; \mathbf{x}) &=q_{\phi, \theta}\left(\mathbf{z}_{L} \;|\; \mathbf{x}\right) \ \prod_{i=1}^{L-1} q_{\phi, \theta}\left(\mathbf{z}_{i} \;|\; \mathbf{z}_{>i}\;, \mathbf{x} \right)
+\end{align*}
+
+-----
+
+\newcommand{\z}{\mathbf{z}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\argmax}[1]{\underset{#1}{\operatorname{arg}\operatorname{max}}\;}
+
+\begin{align}
+\z_{>i} &\sim p(\z_{>i}) = p(\z_L) \prod_{j=i+1}^{L-1} p(\z_j \;|\; \z_{>j})\\
+\z_i^{(s)} &\sim p(\z_i \;|\; \z_{>i})\\[1em]
+% \z_{j}^{(s)} &= \mathbb{E}_{p(\z_{j} \;|\; \z_{j+1:i}^{(s)}, \z_{>i})} \left[ \z_{j} \right], \qquad \mbox{for } j<i\\[.8em]
+\z_{j}^{(s)} &= \argmax{\z_{j}} \, p(\z_{j} \;|\; \z_{j+1:i}^{(s)}\, , \, \z_{>i}) \qquad \mbox{for } j<i\\[.4em]
+\x^{(s)} &\sim p (\x \;|\; \z_{\leq i}^{(s)}, \z_{>i} )
+\end{align}
