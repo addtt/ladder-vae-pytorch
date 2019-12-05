@@ -2,7 +2,8 @@
 
 PyTorch implementation of Ladder Variational Autoencoders (LVAE) [1]:
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![LVAE equation](_readme_figs/lvae_eq.png)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+![LVAE equation](_readme_figs/lvae_eq.png)
 
 where the variational distributions _q_ at each layer are multivariate Normal
 with diagonal covariance.
@@ -90,7 +91,8 @@ We can get a rough idea of what's going on at layer _i_ as follows:
 
 Formally:
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](_readme_figs/eq_layer_inspection.png)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+![](_readme_figs/eq_layer_inspection.png)
 
 where _s_ = 1, ..., _S_ denotes the sample index.
 
