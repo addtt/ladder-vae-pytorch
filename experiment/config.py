@@ -13,11 +13,11 @@ from tqdm import tqdm
 
 from experiment.data import DatasetLoader
 from framework.base_experiment import BaseExperimentConfig
+from framework.summarize import SummarizerCollection
+from framework.utils import print_num_params
 from models.lvae import LadderVAE
 from nn import data_dependent_init
-from framework.summarize import SummarizerCollection
 from utils import linear_anneal
-from framework.utils import print_num_params
 
 sns.set()
 

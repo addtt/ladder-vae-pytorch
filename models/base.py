@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from nn import get_module_device
+from utils import get_module_device
 
 
 class BaseModel(nn.Module):
