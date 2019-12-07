@@ -2,7 +2,8 @@ import torch
 from torch import nn
 from torch.distributions.normal import Normal
 
-# TODO add Categorical
+from utils import to_one_hot
+
 
 class NormalStochasticBlock2d(nn.Module):
     def __init__(self, c_in, c_vars, c_out, kernel=3, transform_p_params=True):
@@ -42,7 +43,7 @@ class NormalStochasticBlock2d(nn.Module):
             if from_mode:
                 z = torch.chunk(mu_lv, 2, dim=1)[0]
             else:
-                z = normal_reparam_sample(mu_lv)
+                z = normal_rsample(mu_lv)
         else:
             z = forced_latent
 
@@ -70,7 +71,7 @@ class NormalStochasticBlock2d(nn.Module):
         return out, data
 
 
-def normal_reparam_sample(mu_lv):
+def normal_rsample(mu_lv):
     """
     Returns a sample from Normal with specified mean and log variance.
     :param mu_lv: a tensor containing mean and log variance along dim=1,
@@ -87,7 +88,7 @@ def normal_reparam_sample(mu_lv):
     return eps * std + mu
 
 
-def logistic_reparam_sample(mu_ls):
+def logistic_rsample(mu_ls):
     """
     Returns a sample from Logistic with specified mean and log scale.
     :param mu_ls: a tensor containing mean and log scale along dim=1,
@@ -111,6 +112,55 @@ def logistic_reparam_sample(mu_ls):
     sample = mu + scale * (torch.log(u) - torch.log(1 - u))
 
     return sample
+
+
+def sample_from_discretized_mix_logistic(l):
+    """
+    Code taken from pytorch adaptation of original PixelCNN++ tf implementation
+    """
+    # Pytorch ordering
+    l = l.permute(0, 2, 3, 1)
+    ls = [int(y) for y in l.size()]
+    xs = ls[:-1] + [3]
+
+    # here and below: unpacking the params of the mixture of logistics
+    nr_mix = int(ls[-1] / 10)
+
+    # unpack parameters
+    logit_probs = l[:, :, :, :nr_mix]
+    l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])
+    # sample mixture indicator from softmax
+    temp = torch.FloatTensor(logit_probs.size())
+    if l.is_cuda: temp = temp.cuda()
+    temp.uniform_(1e-5, 1. - 1e-5)
+    temp = logit_probs.data - torch.log(- torch.log(temp))
+    _, argmax = temp.max(dim=3)
+
+    one_hot = to_one_hot(argmax, nr_mix)
+    sel = one_hot.view(xs[:-1] + [1, nr_mix])
+    # select logistic parameters
+    means = torch.sum(l[:, :, :, :, :nr_mix] * sel, dim=4)
+    log_scales = torch.clamp(torch.sum(
+        l[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
+    coeffs = torch.sum(torch.tanh(
+        l[:, :, :, :, 2 * nr_mix:3 * nr_mix]) * sel, dim=4)
+    # sample from logistic & clip to interval
+    # we don't actually round to the nearest 8bit value when sampling
+    u = torch.FloatTensor(means.size())
+    if l.is_cuda: u = u.cuda()
+    u.uniform_(1e-5, 1. - 1e-5)
+    u = nn.Parameter(u)
+    x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
+    x0 = torch.clamp(torch.clamp(x[:, :, :, 0], min=-1.), max=1.)
+    x1 = torch.clamp(torch.clamp(
+        x[:, :, :, 1] + coeffs[:, :, :, 0] * x0, min=-1.), max=1.)
+    x2 = torch.clamp(torch.clamp(
+        x[:, :, :, 2] + coeffs[:, :, :, 1] * x0 + coeffs[:, :, :, 2] * x1, min=-1.), max=1.)
+
+    out = torch.cat([x0.view(xs[:-1] + [1]), x1.view(xs[:-1] + [1]), x2.view(xs[:-1] + [1])], dim=3)
+    # put back in Pytorch ordering
+    out = out.permute(0, 3, 1, 2)
+    return out
 
 
 def kl_normal(z, p_mulv, q_mulv):

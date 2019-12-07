@@ -1,47 +1,6 @@
-import datetime
-import random
-from collections import OrderedDict
-
-import numpy as np
 import torch
+from torch import nn
 
-
-def print_num_params(model, max_depth=None):
-    sep = '.'  # string separator in parameter name
-    print("\n--- Trainable parameters:")
-    num_params_tot = 0
-    num_params_dict = OrderedDict()
-
-    for name, param in model.named_parameters():
-        if not param.requires_grad:
-            continue
-
-        num_params = param.numel()
-
-        if max_depth is not None:
-            split = name.split(sep)
-            prefix = sep.join(split[:max_depth])
-        else:
-            prefix = name
-        if prefix not in num_params_dict:
-            num_params_dict[prefix] = 0
-        num_params_dict[prefix] += num_params
-        num_params_tot += num_params
-    for n, n_par in num_params_dict.items():
-        print("{:7d}  {}".format(n_par, n))
-    print("  - Total trainable parameters:", num_params_tot)
-    print("---------\n")
-
-def set_rnd_seed(seed):
-    torch.manual_seed(seed)
-    # torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-
-    # The two lines below might slow down training
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
 
 def linear_anneal(x, start, end, steps):
     assert x >= 0
@@ -54,11 +13,9 @@ def linear_anneal(x, start, end, steps):
         return start
     return start + (end - start) / steps * x
 
-def get_date_str():
-    return datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-
-def is_conv(m):
-    return isinstance(m, torch.nn.modules.conv._ConvNd)
-
-def is_linear(m):
-    return isinstance(m, torch.nn.Linear)
+def to_one_hot(tensor, n):
+    # One hot encoding with respect to the last axis
+    one_hot = torch.FloatTensor(tensor.size() + (n,)).zero_()
+    if tensor.is_cuda: one_hot = one_hot.cuda()
+    one_hot.scatter_(len(tensor.size()), tensor.unsqueeze(-1), 1.)
+    return nn.Parameter(one_hot)

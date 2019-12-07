@@ -3,11 +3,15 @@ import pickle
 
 import torch
 import torch.utils.data
-from torch.utils import tensorboard
+try:
+    from torch.utils import tensorboard
+    have_tensorboard = True
+except ImportError:
+    have_tensorboard = False
 from tqdm import tqdm
 
-from summarize import History, SummarizerCollection
-from utils import set_rnd_seed, get_date_str
+from framework.summarize import History, SummarizerCollection
+from framework.utils import set_rnd_seed, get_date_str
 
 
 class Trainer:
@@ -51,7 +55,10 @@ class Trainer:
             os.makedirs(self.img_folder)
             os.makedirs(self.checkpoint_folder)
             os.makedirs(tboard_folder)
-            self.tb_writer = tensorboard.SummaryWriter(tboard_folder)
+            if have_tensorboard:
+                self.tb_writer = tensorboard.SummaryWriter(tboard_folder)
+            else:
+                self.tb_writer = None
             config_path = os.path.join(self.checkpoint_folder, 'config.pkl')
             with open(config_path, 'wb') as fd:
                 pickle.dump(args, fd)
@@ -128,8 +135,9 @@ class Trainer:
                     if not e.args.dry_run:
                         with open(self.log_path, 'wb') as fd:
                             pickle.dump(self.train_history.get_dict(), fd)
-                        for k, v in summaries.items():
-                            self.tb_writer.add_scalar('train_' + k, v, step)
+                        if self.tb_writer is not None:
+                            for k, v in summaries.items():
+                                self.tb_writer.add_scalar('train_' + k, v, step)
 
                 # Optimization step
                 e.optimizer.step()

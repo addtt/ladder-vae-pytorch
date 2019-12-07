@@ -3,8 +3,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from utils import is_conv, is_linear
-
 debug = False
 
 
@@ -248,6 +246,14 @@ def softplus(x, min_thresh=0.0):
 
 def get_module_device(module):
     return next(module.parameters()).device
+
+
+def is_conv(m):
+    return isinstance(m, torch.nn.modules.conv._ConvNd)
+
+
+def is_linear(m):
+    return isinstance(m, torch.nn.Linear)
 
 
 

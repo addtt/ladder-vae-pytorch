@@ -7,9 +7,10 @@ import torch
 import torch.utils.data
 from torchvision.utils import save_image
 
+import framework.utils
 import utils
-from experiment import ExperimentConfig
-from utils import set_rnd_seed
+from experiment.config import ExperimentConfig
+from framework.utils import set_rnd_seed
 
 # default_run = '191124_111948_static_mnist,12ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=1.0,dropout=0.2,learnprior,seed42'
 # default_run = '191116_015022_static_mnist,3ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=0.5,dropout=0.2,learnprior,seed42'
@@ -26,7 +27,7 @@ def main():
     set_rnd_seed(eval_args.seed)
     use_cuda = not eval_args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    date_str = utils.get_date_str()
+    date_str = framework.utils.get_date_str()
     print('device: {}, start time: {}'.format(device, date_str))
 
     # Get path to load model

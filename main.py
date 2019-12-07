@@ -1,4 +1,4 @@
-from experiment import ExperimentConfig
+from experiment.config import ExperimentConfig
 from framework.trainer import Trainer
 
 
