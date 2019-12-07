@@ -20,7 +20,7 @@ Example to run MNIST:
 CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 32 --downsample 0 0 1 0 0 1 0 0 0 1 0 0 --nonlin elu --skip --blocks-per-layer 4 --gated --test-batch-size 2000 --freebits 1.0 --tr-log-interv 10000 --ts-log-interv 10000 --ckpt-interv 100000 --ll-interv 50000 --ll-samples 100 --learn-top-prior --data-dep-init --seed 42 --dataset static_mnist
 ```
 
-(For CelebA, it's necessary to modify the path in `experiment.DatasetLoader`)
+(For CelebA, it's necessary to modify the path in `experiment.data.DatasetLoader`)
 
 Tested with:
 - `python 3.6.8`
@@ -169,7 +169,7 @@ I did not perform an extensive hyperparameter search, but this worked pretty wel
   See code for details.
 - freebits=1.0 in experiments with more than 6 stochastic layers, and 0.5 for
   smaller models.
-- For everything else, see defaults (`_parse_args()` in `experiment.py`).
+- For everything else, see defaults in `experiment.config._parse_args()`.
 
 With these settings, the number of parameters is roughly 1M per stochastic
   layer. I tried to control for this by experimenting e.g. with half the number
