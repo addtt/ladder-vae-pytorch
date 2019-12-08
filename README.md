@@ -35,9 +35,9 @@ Results on standard datasets. Final results on SVHN, CIFAR, and CelebA coming so
 
 |  dataset        | num layers | ELBO, 1 iws  | ELBO, 100 iws | ELBO, 1000 iws |
 | --------------- |:----------:|:------------:|:-------------:|:--------------:|
-| binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
-| binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
+| binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
+| binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
 | SVHN            | 15         | 4097 (1.92)  | 4052 (1.90)   |     |
 | CIFAR10         | 15         | 7161 (3.36)  | 7102  (3.34)  |     |
 | CelebA          | 20         | 20478 (2.40) |  20363 (239)  |     |
