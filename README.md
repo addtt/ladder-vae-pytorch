@@ -40,7 +40,7 @@ Results on standard datasets. Final results on SVHN, CIFAR, and CelebA coming so
 | binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
 | SVHN            | 15         | 4097 (1.92)  | 4052 (1.90)   |     |
 | CIFAR10         | 15         | 7161 (3.36)  | 7102  (3.34)  |     |
-| CelebA          | 20         | 20478 (2.40) |  20363 (239)  |     |
+| CelebA          | 20         | 20478 (2.40) |  20363 (2.39) |     |
 
 Note:
 - Bits per dimension in brackets when applicable.
