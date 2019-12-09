@@ -6,4 +6,5 @@ data/
 evaluation_results/
 results/
 tensorboard_logs/
+*.pyc
 
