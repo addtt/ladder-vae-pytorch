@@ -65,6 +65,8 @@ class ExperimentConfig(BaseExperimentConfig):
         legal_resblock = ['cabdcabd', 'bacdbac', 'bacdbacd']
         legal_datasets = ['static_mnist', 'cifar10', 'celeba',
                           'multi_dsprites_binary_rgb', 'svhn']
+        legal_likelihoods = ['bernoulli', 'gaussian',
+                             'discr_log', 'discr_log_mix']
 
         parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -76,7 +78,15 @@ class ExperimentConfig(BaseExperimentConfig):
                             default='static_mnist',
                             metavar='NAME',
                             dest='dataset_name',
-                            help="data set: " + list_options(legal_datasets))
+                            help="dataset: " + list_options(legal_datasets))
+
+        parser.add_argument('--likelihood',
+                            type=str,
+                            choices=legal_likelihoods,
+                            metavar='NAME',
+                            dest='likelihood',
+                            help="likelihood: {}; default depends on dataset".format(
+                                list_options(legal_likelihoods)))
 
         parser.add_argument('--batch-size',
                             type=int,
@@ -253,7 +263,7 @@ class ExperimentConfig(BaseExperimentConfig):
                             default='',
                             metavar='STR',
                             dest='additional_descr',
-                            help='additional description for run name')
+                            help='additional description for experiment name')
 
         parser.add_argument('--dry-run',
                             action='store_true',
@@ -284,7 +294,8 @@ class ExperimentConfig(BaseExperimentConfig):
             'celeba': 'discr_log_mix',
             'svhn': 'discr_log_mix',
         }
-        args.likelihood = likelihood_map[args.dataset_name]
+        if args.likelihood is None:  # default
+            args.likelihood = likelihood_map[args.dataset_name]
 
         return args
 
