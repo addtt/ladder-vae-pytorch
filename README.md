@@ -31,9 +31,9 @@ Tested with:
 
 ## Likelihood results
 
-Results on standard datasets. Final results on SVHN, CIFAR, and CelebA coming soon.
+Log likelihood bounds on the test set. Final results coming soon.
 
-|  dataset        | num layers | ELBO, 1 iws  | ELBO, 100 iws | ELBO, 1000 iws |
+|  dataset        | num layers | -ELBO, 1 iws | -ELBO, 100 iws| -ELBO, 1000 iws|
 | --------------- |:----------:|:------------:|:-------------:|:--------------:|
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
 | binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
