@@ -38,12 +38,12 @@ Results on standard datasets. Final results on SVHN, CIFAR, and CelebA coming so
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
 | binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
 | binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
-| SVHN            | 15         | 4097 (1.92)  | 4052 (1.90)   |     |
-| CIFAR10         | 15         | 7161 (3.36)  | 7102  (3.34)  |     |
-| CelebA          | 20         | 20478 (2.40) |  20363 (2.39) |     |
+| SVHN            | 15         | 4077 (1.91)  | 4033 (1.89)   |     |
+| CIFAR10         | 15         | 7152 (3.36)  | 7092 (3.33)   |     |
+| CelebA          | 20         | 20421 (2.40) | 20303 (2.38)  |     |
 
 Note:
-- Bits per dimension in brackets when applicable.
+- Bits per dimension in brackets.
 - 'iws' stands for importance weighted samples. More samples means tighter log
   likelihood lower bound. The bound converges to the actual log likelihood as 
   the number of samples goes to infinity [5].
