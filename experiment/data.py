@@ -60,9 +60,8 @@ class DatasetLoader:
             test_set = CelebA(data_folder, split='valid',
                               download=True, transform=transform)
 
-        # multi-dSprites not available right now, but I plan to update it and upload it
         elif args.dataset_name == 'multi_dsprites_binary_rgb':
-            data_path = './data/multi-dsprites-binary-rgb/multi_dsprites_190908_003456'
+            data_path = './data/multi-dsprites-binary-rgb/multi_dsprites_1'
             train_set = MultiDSpritesBinaryRGB(data_path, train=True)
             test_set = MultiDSpritesBinaryRGB(data_path, train=False)
 
