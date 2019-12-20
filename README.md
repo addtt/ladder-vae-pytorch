@@ -33,15 +33,14 @@ Tested with:
 
 Log likelihood bounds on the test set. Final results coming soon.
 
-|  dataset        | num layers | -ELBO        | - log _p(x)_ ≤ | - log _p(x)_ ≤ |
-|                 |            |              |  (100 iws)     |    (1000 iws)  | 
-| --------------- |:----------:|:------------:|:--------------:|:--------------:|
-| binarized MNIST | 3          | 82.14        | 79.47          | 79.24          |
-| binarized MNIST | 6          | 80.74        | 78.65          | 78.52          |
-| binarized MNIST | 12         | 80.50        | 78.50          | 78.30          |
-| SVHN            | 15         | 4012 (1.88)  | 3973 (1.87)    |     |
-| CIFAR10         | 15         | 7128 (3.35)  | 7068 (3.32)    |     |
-| CelebA          | 20         | 20026 (2.35) | 19913 (2.34)   |     |
+|  dataset        | num layers | -ELBO        | - log _p(x)_ ≤ (100 iws) | - log _p(x)_ ≤ (1000 iws) |
+| --------------- |:----------:|:------------:|:-------------:|:--------------:|
+| binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
+| binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
+| binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
+| SVHN            | 15         | 4012 (1.88)  | 3973 (1.87)   |     |
+| CIFAR10         | 15         | 7128 (3.35)  | 7068 (3.32)   |     |
+| CelebA          | 20         | 20026 (2.35) | 19913 (2.34)  |     |
 
 Note:
 - Bits per dimension in brackets.
