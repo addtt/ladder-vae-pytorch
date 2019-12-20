@@ -33,14 +33,14 @@ Tested with:
 
 Log likelihood bounds on the test set. Final results coming soon.
 
-|  dataset        | num layers | -ELBO, 1 iws | -ELBO, 100 iws| -ELBO, 1000 iws|
+|  dataset        | num layers | -ELBO        | - log _p(x)_ ≤ (100 iws) | - log _p(x)_ (1000 iws) |
 | --------------- |:----------:|:------------:|:-------------:|:--------------:|
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
 | binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
 | binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
-| SVHN            | 15         | 4077 (1.91)  | 4033 (1.89)   |     |
-| CIFAR10         | 15         | 7152 (3.36)  | 7092 (3.33)   |     |
-| CelebA          | 20         | 20421 (2.40) | 20303 (2.38)  |     |
+| SVHN            | 15         | 4012 (1.88)  | 3973 (1.87)   |     |
+| CIFAR10         | 15         | 7128 (3.35)  | 7068 (3.32)   |     |
+| CelebA          | 20         | 20026 (2.35) | 19913 (2.34)  |     |
 
 Note:
 - Bits per dimension in brackets.
@@ -74,8 +74,7 @@ Note:
 
 ## Hierarchical representations
 
-Here we try to understand the representations learned by individual layers
-in some of the datasets.
+Here we try to visualize the representations learned by individual layers.
 We can get a rough idea of what's going on at layer _i_ as follows:
 
 - Sample latent variables from all layers above layer _i_ (Eq. 1).
