@@ -33,7 +33,7 @@ Tested with:
 
 Log likelihood bounds on the test set. Final results coming soon.
 
-|  dataset        | num layers | -ELBO        | - log _p(x)_ ≤ (100 iws) | - log _p(x)_ ≤ (1000 iws) |
+|  dataset        | num layers | -ELBO        | - log _p(x)_ ≤ <br> [100 iws] | - log _p(x)_ ≤ <br> [1000 iws] |
 | --------------- |:----------:|:------------:|:-------------:|:--------------:|
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
 | binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
