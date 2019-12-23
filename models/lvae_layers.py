@@ -103,7 +103,7 @@ class TopDownLayer(nn.Module):
 
     def forward(self, input_=None, skip_connection_input=None,
                 inference_mode=False, bu_value=None, n_img_prior=None,
-                forced_latent=None, from_mode=False,
+                forced_latent=None, use_mode=False,
                 force_constant_output=False):
 
         # Check consistency of arguments
@@ -141,7 +141,7 @@ class TopDownLayer(nn.Module):
             p_params=p_params,
             q_params=q_params,
             forced_latent=forced_latent,
-            from_mode=from_mode,
+            use_mode=use_mode,
             force_constant_output=force_constant_output,
         )
 
@@ -159,6 +159,8 @@ class TopDownLayer(nn.Module):
         aux_out = {
             'z': aux['z'],
             'kl': aux['kl_samplewise'],
+            'logprob_p': aux['logprob_p'],
+            'logprob_q': aux['logprob_q'],
         }
         return x, x_pre_residual, aux_out
 

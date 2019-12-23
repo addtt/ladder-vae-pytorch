@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from stochastic import normal_rsample, logistic_rsample
+from stochastic import normal_rsample, logistic_rsample, sample_from_discretized_mix_logistic
 
 sns.set()
 

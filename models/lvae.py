@@ -170,7 +170,7 @@ class LadderVAE(BaseModel):
         bu_values = self.bottomup_pass(x_pad)
 
         # Top-down inference/generation
-        out, z, kl = self.topdown_pass(bu_values)
+        out, z, kl, logp = self.topdown_pass(bu_values)
 
         # Restore original image size
         out = crop_img_tensor(out, img_size)
@@ -193,6 +193,7 @@ class LadderVAE(BaseModel):
             'kl_sep': kl_sep,
             'kl_avg_layerwise': kl_avg_layerwise,
             'kl_loss': kl_loss,
+            'logp': logp,
             'out_mean': likelihood_info['mean'],
             'out_mode': likelihood_info['mode'],
             'out_sample': likelihood_info['sample'],
@@ -217,14 +218,15 @@ class LadderVAE(BaseModel):
 
 
     def topdown_pass(self, bu_values=None, n_img_prior=None,
-                     layers_from_mode=None, constant_layers=None):
+                     mode_layers=None, constant_layers=None,
+                     forced_latent=None):
 
         # Default: no layer is sampled from the distribution's mode
-        if layers_from_mode is None:
-            layers_from_mode = []
+        if mode_layers is None:
+            mode_layers = []
         if constant_layers is None:
             constant_layers = []
-        prior_experiment = len(layers_from_mode) > 0 or len(constant_layers) > 0
+        prior_experiment = len(mode_layers) > 0 or len(constant_layers) > 0
 
         # If the bottom-up inference values are not given, don't do
         # inference, sample from prior instead
@@ -246,6 +248,12 @@ class LadderVAE(BaseModel):
         # KL divergence of each layer
         kl = [None] * self.n_layers
 
+        if forced_latent is None:
+            forced_latent = [None] * self.n_layers
+
+        # log p(z) where z is the sample in the topdown pass
+        logprob_p = 0.
+
         # Top-down inference/generation loop
         out = out_pre_residual = None
         for i in reversed(range(self.n_layers)):
@@ -260,7 +268,7 @@ class LadderVAE(BaseModel):
                 bu_value = None
 
             # Whether the current layer should be sampled from the mode
-            from_mode = i in layers_from_mode
+            use_mode = i in mode_layers
             constant_out = i in constant_layers
 
             # if i < self.n_layers - 1:
@@ -276,16 +284,18 @@ class LadderVAE(BaseModel):
                 inference_mode=inference_mode,
                 bu_value=bu_value,
                 n_img_prior=n_img_prior,
-                from_mode=from_mode,
-                force_constant_output=constant_out
+                use_mode=use_mode,
+                force_constant_output=constant_out,
+                forced_latent=forced_latent[i],
             )
             z[i] = aux['z']
             kl[i] = aux['kl']
+            logprob_p += aux['logprob_p'].mean()  # mean over batch
 
         # Final top-down layer
         out = self.final_top_down(out)
 
-        return out, z, kl
+        return out, z, kl, logprob_p
 
 
     def pad_input(self, x):
@@ -324,14 +334,72 @@ class LadderVAE(BaseModel):
         return padded_size
 
 
-    def sample_prior(self, n_imgs, layers_from_mode=None, constant_layers=None):
+    def sample_prior(self, n_imgs, mode_layers=None, constant_layers=None):
 
         # Generate from prior
-        out, z, _ = self.topdown_pass(
+        out, z, _, logp = self.topdown_pass(
             n_img_prior=n_imgs,
-            layers_from_mode=layers_from_mode,
+            mode_layers=mode_layers,
             constant_layers=constant_layers
         )
+        out = crop_img_tensor(out, self.img_shape)
+
+        # Log likelihood and other info (per data point)
+        _, likelihood_data = self.likelihood(out, None)
+
+        return likelihood_data['sample']
+
+    # TODO quick prototype, bad code
+    def new_sample_prior(self, n_imgs,
+                         constant_layers=None, optimized_layers=None,
+                         mode_layers=None, init_attempts=20,
+                         gradient_steps=0, lr=3e-3,
+                         ):
+
+        best_log_p = -1e10
+        best_z = None
+
+        # Generate from prior
+        for i in range(init_attempts):
+            out, z, _, logp = self.topdown_pass(
+                n_img_prior=n_imgs,
+                mode_layers=[],
+                constant_layers=constant_layers
+            )
+            if logp > best_log_p:
+                best_log_p = logp
+                best_z = z
+        logp = best_log_p
+        z = best_z
+
+        print("init logp:", logp.item())
+
+        params = []
+        for i in optimized_layers:
+            z[i].requires_grad_(True)
+            params.append(z[i])
+
+        if len(params) > 0:
+            opt = torch.optim.Adam(params, lr=lr)
+            with torch.enable_grad():
+                for i in range(gradient_steps):
+                    out, _, _, logp = self.topdown_pass(
+                        n_img_prior=n_imgs,
+                        # layers_from_mode=[],
+                        # constant_layers=constant_layers,
+                        forced_latent=z
+                    )
+                    loss = -logp
+
+                    opt.zero_grad()
+                    loss.backward()
+                    opt.step()
+
+                    if (i+1) % 500 == 0:
+                        print('  log p', logp.item())
+
+        print('  log p(z) =', logp.item())
+
         out = crop_img_tensor(out, self.img_shape)
 
         # Log likelihood and other info (per data point)

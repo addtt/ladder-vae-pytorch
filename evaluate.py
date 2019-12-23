@@ -8,18 +8,10 @@ import torch.utils.data
 from torchvision.utils import save_image
 
 import framework.utils
-import utils
 from experiment.config import ExperimentConfig
 from framework.utils import set_rnd_seed
 
-# default_run = '191124_111948_static_mnist,12ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=1.0,dropout=0.2,learnprior,seed42'
-# default_run = '191116_015022_static_mnist,3ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=0.5,dropout=0.2,learnprior,seed42'
-# default_run = '191116_015017_static_mnist,6ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=0.5,dropout=0.2,learnprior,seed42'
-# default_run = '191121_002332_svhn,15ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=1.0,dropout=0.2,learnprior,seed42,logistic_mix_10'
-# default_run = '191121_001908_cifar10,15ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=1.0,dropout=0.2,learnprior,seed42,logistic_mix_10'
-# default_run = '191121_002044_cifar10,15ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=1.5,dropout=0.2,learnprior,seed42,logistic_mix_10'
-default_run = '191121_003831_celeba,20ly,4bpl,skip,gated,block=bacdbacd,elu,freebits=1.0,dropout=0.2,learnprior,seed42,logistic_mix_10'
-
+default_run = ""
 
 def main():
     eval_args = parse_args()
@@ -80,30 +72,49 @@ def main():
 
 
 
-def inspect_layer_repr(model, img_folder, n=12):
+def inspect_layer_repr(model, img_folder, n=8, mode=2):
     for i in range(model.n_layers):
-        # # Sample all from mode
-        # layers_from_mode = list(range(model.n_layers))
-        # del layers_from_mode[i]
-        # constant_layers = []
+
+        # if i not in [0, 3, 6, 10, 13, 16, 19]:
+        #     continue
+
+        print('layer', i)
+
+        mode_layers = range(i)
+        constant_layers = range(i + 1, model.n_layers)
+
+        # Sample top layers once, then take many samples of a middle layer,
+        # then optimize all downstream z's to maximize p(z) if gradient_steps>0
+        if mode == 1:
+            sample = []
+            for r in range(n):
+                sample.append(
+                    model.new_sample_prior(
+                        n,
+                        constant_layers=constant_layers,
+                        optimized_layers=mode_layers,
+                        gradient_steps=0,
+                    )
+                )
+            sample = torch.cat(sample)
+            fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
+            save_image(sample, fname, nrow=n)
 
         # Sample top layers once, then take many samples of a middle layer,
         # then sample from the mode in all downstream layers.
-        layers_from_mode = range(i)
-        constant_layers = range(i + 1, model.n_layers)
-
-        sample = []
-        for r in range(n):
-            sample.append(
-                model.sample_prior(
-                    n,
-                    layers_from_mode=layers_from_mode,
-                    constant_layers=constant_layers
+        elif mode == 2:
+            sample = []
+            for r in range(n):
+                sample.append(
+                    model.sample_prior(
+                        n,
+                        mode_layers=mode_layers,  # TODO refactor all "from mode" to something more sensible
+                        constant_layers=constant_layers
+                    )
                 )
-            )
-        sample = torch.cat(sample)
-        fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
-        save_image(sample, fname, nrow=n)
+            sample = torch.cat(sample)
+            fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
+            save_image(sample, fname, nrow=n)
 
 
 def parse_args():

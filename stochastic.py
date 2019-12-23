@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 from torch.distributions.normal import Normal
@@ -21,9 +22,9 @@ class NormalStochasticBlock2d(nn.Module):
         self.conv_out = nn.Conv2d(c_vars, c_out, kernel, padding=pad)
 
     def forward(self, p_params, q_params=None, forced_latent=None,
-                from_mode=False, force_constant_output=False):
+                use_mode=False, force_constant_output=False):
 
-        assert (forced_latent is None) or (not from_mode)
+        assert (forced_latent is None) or (not use_mode)
 
         if self.transform_p_params:
             p_params = self.conv_in_p(p_params)
@@ -35,12 +36,9 @@ class NormalStochasticBlock2d(nn.Module):
             mu_lv = q_params
         else:
             mu_lv = p_params
-            # Debugging, reduce variance when sampling
-            # mu_lv = mu_lv.clone()
-            # mu_lv[:, self.c_vars:] = mu_lv[:, self.c_vars:] - 2.
 
         if forced_latent is None:
-            if from_mode:
+            if use_mode:
                 z = torch.chunk(mu_lv, 2, dim=1)[0]
             else:
                 z = normal_rsample(mu_lv)
@@ -52,19 +50,28 @@ class NormalStochasticBlock2d(nn.Module):
             z = z[0:1].expand_as(z).clone()
             p_params = p_params[0:1].expand_as(p_params).clone()
 
-        # print('z', z.min().item(), z.max().item())
         out = self.conv_out(z)
 
-        # print('out', out.min().item(), out.max().item())
-
         kl_elementwise = kl_samplewise = None
+        logprob_q = None
+        m, lv = p_params.chunk(2, dim=1)
+        # p = Normal(m, (lv / 2).exp())
+        # logprob_p = p.log_prob(z)
+        logprob_p = -0.5 * (np.log(2 * np.pi) + lv + (z - m)**2 / lv.exp())
+        logprob_p = logprob_p.sum((1, 2, 3))
         if q_params is not None:
+            m, lv = q_params.chunk(2, dim=1)
+            q = Normal(m, (lv / 2).exp())
+            logprob_q = q.log_prob(z).sum((1, 2, 3))
             kl_elementwise = kl_normal(z, p_params, q_params)
             kl_samplewise = kl_elementwise.sum((1, 2, 3))
+
         data = {
             'z': z,
             'p_params': p_params,
             'q_params': q_params,
+            'logprob_p': logprob_p,
+            'logprob_q': logprob_q,
             'kl_elementwise': kl_elementwise,
             'kl_samplewise': kl_samplewise,
         }
