@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import TensorDataset
 
-
+# TODO move to utils
 def untargz(path):
     folder = os.path.dirname(path)
     tar = tarfile.open(path, "r:gz")

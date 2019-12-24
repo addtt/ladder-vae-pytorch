@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, SVHN, CelebA
 
-from datasets.datasets import MultiDSpritesBinaryRGB, StaticBinaryMnist
+from datasets import MultiDSpritesBinaryRGB, StaticBinaryMnist
 
 
 class DatasetLoader:
