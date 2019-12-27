@@ -106,9 +106,6 @@ class BaseExperimentConfig:
         """
         Perform additional testing, including possibly generating images.
 
-        In this case, save samples from the generative model, and pairs
-        input/reconstruction from the test set.
-
         :param img_folder: folder to store images
         """
         raise NotImplementedError
