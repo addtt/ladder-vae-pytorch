@@ -93,9 +93,7 @@ def inspect_layer_repr(model, img_folder, n=8, mode=2):
                         n,
                         constant_layers=constant_layers,
                         optimized_layers=mode_layers,
-                        gradient_steps=0,
-                    )
-                )
+                        gradient_steps=0))
             sample = torch.cat(sample)
             fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
             save_image(sample, fname, nrow=n)
@@ -108,10 +106,8 @@ def inspect_layer_repr(model, img_folder, n=8, mode=2):
                 sample.append(
                     model.sample_prior(
                         n,
-                        mode_layers=mode_layers,  # TODO refactor all "from mode" to something more sensible
-                        constant_layers=constant_layers
-                    )
-                )
+                        mode_layers=mode_layers,
+                        constant_layers=constant_layers))
             sample = torch.cat(sample)
             fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
             save_image(sample, fname, nrow=n)

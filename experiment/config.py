@@ -380,7 +380,7 @@ class ExperimentConfig(BaseExperimentConfig):
 
             # Get batch
             t = [self.dataloaders.train.dataset[i] for i in range(args.batch_size)]
-            t = torch.cat(tuple(t[i][0].unsqueeze(0) for i in range(len(t))))
+            t = torch.stack(tuple(t[i][0] for i in range(len(t))))
 
             # Use batch for data dependent init
             data_dependent_init(self.model, {'x': t.to(device)})
@@ -601,10 +601,9 @@ class ExperimentConfig(BaseExperimentConfig):
             raise RuntimeError(msg)
         outputs = self.model_simple_eval(self.model, x)
         x = x.to(self.device)
-        imgs = torch.cat([
-            x[:n_img].unsqueeze(0),
-            outputs['out_sample'][:n_img].unsqueeze(0)
-        ])
+        imgs = torch.stack([
+            x[:n_img],
+            outputs['out_sample'][:n_img]])
         imgs = imgs.permute(1, 0, 2, 3, 4)
         imgs = imgs.reshape(n ** 2, x.size(1), x.size(2), x.size(3))
         save_image(imgs.cpu(), fname, nrow=n)
