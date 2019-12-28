@@ -1,47 +1,82 @@
 import os
-import tarfile
 from urllib import request
 
 import numpy as np
 import torch
-from torch.utils.data import TensorDataset
-
-# TODO move to utils
-def untargz(path):
-    folder = os.path.dirname(path)
-    tar = tarfile.open(path, "r:gz")
-    tar.extractall(folder)
-    tar.close()
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 
 
-class MultiDSpritesBinaryRGB(TensorDataset):
+class MultiObjectDataLoader(DataLoader):
 
-    def __init__(self, data_path, train, shuffle_init=False, split=0.9):
-        train_x, test_x = self.get_data_from_file(data_path, split)
-        x = train_x if train else test_x
-        x = np.transpose(x, [0, 3, 1, 2])
-        assert x.shape[1] == 3
-        if shuffle_init:
-            np.random.shuffle(x)
-        labels = torch.zeros(len(x),).fill_(float('nan'))
-        super().__init__(torch.from_numpy(x), labels)
+    def __init__(self, *args, **kwargs):
+        assert 'collate_fn' not in kwargs
+        kwargs['collate_fn'] = self.custom_collate
+        super().__init__(*args, **kwargs)
 
     @staticmethod
-    def get_data_from_file(path, split):
-        # The string path is like folder/name (no trailing /)
-        # The archive is folder/name.tar.gz
-        # The data is folder/name/name.npz
-        name = os.path.basename(path)
-        npz_path = os.path.join(path, name + '.npz')
-        if not os.path.isfile(npz_path):  # no numpy file
-            print("Dataset not found: decompressing targz")
-            untargz(path + '.tar.gz')
-        data = np.load(npz_path, allow_pickle=True)
+    def custom_collate(batch):
+        # Input is a batch of (image, label_dict)
+        _, item_labels = batch[0]
+        keys = item_labels.keys()
+
+        # Simply stack images into a tensor
+        imgs = [item[0] for item in batch]
+        imgs = torch.stack(imgs, dim=0)
+
+        # All labels will be lists, because they might have variable length
+        # across the batch.
+        # Item is batch[i], second element is label dict, pick attribute k.
+        labels = {
+            k: [item[1][k] for item in batch]
+            for k in keys}
+
+        return imgs, labels
+
+
+class MultiObjectDataset(Dataset):
+
+    def __init__(self, data_path, train, split=0.9):
+        super().__init__()
+
+        # Load data
+        data = np.load(data_path, allow_pickle=True)
+
+        # Rescale images and permute dimensions
         x = np.array(data['x'], dtype=np.float32) / 255
+        x = np.transpose(x, [0, 3, 1, 2])  # batch, channels, h, w
+
+        # Get labels
+        labels = data['labels'].item()
+
+        # Split train and test
         split = int(split * len(x))
-        train = x[:split]
-        test = x[split:]
-        return train, test
+        if train:
+            indices = range(split)
+        else:
+            indices = range(split, len(x))
+
+        # From numpy/ndarray to torch tensors (labels are lists of tensors as
+        # they might have different sizes)
+        self.x = torch.from_numpy(x[indices])
+        self.labels = self._labels_to_tensorlist(labels, indices)
+
+    @staticmethod
+    def _labels_to_tensorlist(labels, indices):
+        out = {k: [] for k in labels.keys()}
+        for i in indices:
+            for k in labels.keys():
+                t = labels[k][i]
+                t = torch.as_tensor(t)
+                out[k].append(t)
+        return out
+
+    def __getitem__(self, index):
+        x = self.x[index]
+        labels = {k: self.labels[k][index] for k in self.labels.keys()}
+        return x, labels
+
+    def __len__(self):
+        return self.x.size(0)
 
 
 class StaticBinaryMnist(TensorDataset):
