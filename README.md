@@ -20,13 +20,6 @@ Example to run MNIST:
 CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 32 --downsample 0 0 1 0 0 1 0 0 0 1 0 0 --nonlin elu --skip --blocks-per-layer 4 --gated --test-batch-size 2000 --freebits 1.0 --tr-log-interv 10000 --ts-log-interv 10000 --ckpt-interv 100000 --ll-interv 50000 --ll-samples 100 --learn-top-prior --data-dep-init --seed 42 --dataset static_mnist
 ```
 
-(For CelebA, it's necessary to modify the path in `experiment.data.DatasetLoader`)
-
-Tested with:
-- `python 3.6.8`
-- `torch 1.3.1`
-- `torchvision 0.4.2`
-- `numpy 1.17.4`
 
 
 ## Likelihood results
@@ -48,10 +41,18 @@ Note:
   likelihood lower bound. The bound converges to the actual log likelihood as 
   the number of samples goes to infinity [5].
 - Each pixel in the images is modeled independently. The likelihood is Bernoulli
-  for binary images (MNIST), and discretized mixture of logistics with 10 
+  for binary images, and discretized mixture of logistics with 10 
   components [6] otherwise.
-- Statically binarized MNIST is retrieved from Hugo Larochelle's website, see [7].
-- CelebA is rescaled and cropped to 64x64 - see code for details.
+
+
+## Supported datasets
+
+- Statically binarized MNIST [7], see Hugo Larochelle's website `http://www.cs.toronto.edu/~larocheh/public/datasets/`
+- [SVHN](http://ufldl.stanford.edu/housenumbers/)
+- [CIFAR10](https://www.cs.toronto.edu/~kriz/cifar.html)
+- [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) rescaled and cropped to 64x64 &ndash; see code for details. The path in `experiment.data.DatasetLoader` has to be modified
+- [binary multi-dSprites](https://github.com/addtt/multi-object-datasets): 64x64 RGB shapes (0 to 2) in each image
+
 
 ## Samples
 
@@ -174,6 +175,17 @@ With these settings, the number of parameters is roughly 1M per stochastic
   layer. I tried to control for this by experimenting e.g. with half the number
   of layers but twice the number of residual blocks, but it looks like the number
   of stochastic layers is what matters the most.
+
+
+## Requirements
+
+Tested with (not strict requirements):
+```
+python 3.6.8
+pytorch 1.3.1
+torchvision 0.4.2
+numpy 1.17.4
+```
 
 ## References
 
