@@ -102,7 +102,7 @@ class Trainer:
                 e.optimizer.zero_grad()
 
                 # Forward pass: get loss and other info
-                outputs = e.model_simple_eval(e.model, x)
+                outputs = e.basic_model_eval(e.model, x)
 
                 # Compute gradients (backward pass)
                 outputs['loss'].backward()

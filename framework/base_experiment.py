@@ -65,7 +65,7 @@ class BaseExperimentConfig:
         raise NotImplementedError
 
 
-    def model_simple_eval(self, model, x):
+    def basic_model_eval(self, model, x):
         """
         Simple single-pass model evaluation. It consists of a forward pass
         and computation of all necessary losses and metrics.
