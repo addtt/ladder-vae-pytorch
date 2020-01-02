@@ -47,3 +47,34 @@ def set_rnd_seed(seed):
 
 def get_date_str():
     return datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+
+
+def linear_anneal(x, start, end, steps):
+    assert x >= 0
+    assert steps > 0
+    assert start >= 0
+    assert end >= 0
+    if x > steps:
+        return end
+    if x < 0:
+        return start
+    return start + (end - start) / steps * x
+
+
+def to_np(x):
+    try:
+        return x.detach().cpu().numpy()
+    except AttributeError:
+        return x
+
+
+def get_module_device(module):
+    return next(module.parameters()).device
+
+
+def is_conv(m):
+    return isinstance(m, torch.nn.modules.conv._ConvNd)
+
+
+def is_linear(m):
+    return isinstance(m, torch.nn.Linear)
