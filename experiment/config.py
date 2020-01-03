@@ -396,7 +396,7 @@ class ExperimentConfig(BaseExperimentConfig):
             )
 
 
-    def basic_model_eval(self, model, x):
+    def forward(self, model, x):
         """
         Simple single-pass model evaluation. It consists of a forward pass
         and computation of all necessary losses and metrics.
@@ -531,7 +531,7 @@ class ExperimentConfig(BaseExperimentConfig):
         all_elbo_sep = torch.zeros(n_test, iw_samples)
         for batch_idx, (x, _) in enumerate(test_loader):
             for i in range(iw_samples):
-                outputs = self.basic_model_eval(self.model, x)
+                outputs = self.forward(self.model, x)
 
                 # elbo_sep shape (batch size,)
                 i_start = batch_idx * args.test_batch_size
@@ -598,7 +598,7 @@ class ExperimentConfig(BaseExperimentConfig):
             msg = ("{} data points required, but given batch has size {}. "
                    "Please use a larger batch.".format(n_img, x.shape[0]))
             raise RuntimeError(msg)
-        outputs = self.basic_model_eval(self.model, x)
+        outputs = self.forward(self.model, x)
         x = x.to(self.device)
         imgs = torch.stack([
             x[:n_img],
