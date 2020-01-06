@@ -408,11 +408,11 @@ class ExperimentConfig(BaseExperimentConfig):
 
         # Forward pass
         x = x.to(self.device, non_blocking=True)
-        ll, aux = model(x)
-        recons_sep = -ll
-        kl_sep = aux['kl_sep']
-        kl = aux['kl']
-        kl_loss = aux['kl_loss']
+        model_out = model(x)
+        recons_sep = -model_out['ll']
+        kl_sep = model_out['kl_sep']
+        kl = model_out['kl']
+        kl_loss = model_out['kl_loss']
 
         # ELBO
         elbo_sep = - (recons_sep + kl_sep)
@@ -431,22 +431,22 @@ class ExperimentConfig(BaseExperimentConfig):
             l2 = l2 + torch.sum(p ** 2)
         l2 = l2.sqrt()
 
-        metrics = {
+        output = {
             'loss': loss,
             'elbo': elbo,
             'elbo_sep': elbo_sep,
             'kl': kl,
             'l2': l2,
             'recons': recons,
-            'out_mean': aux['out_mean'],
-            'out_mode': aux['out_mode'],
-            'out_sample': aux['out_sample'],
-            'likelihood_params': aux['likelihood_params'],
+            'out_mean': model_out['out_mean'],
+            'out_mode': model_out['out_mode'],
+            'out_sample': model_out['out_sample'],
+            'likelihood_params': model_out['likelihood_params'],
         }
-        if 'kl_avg_layerwise' in aux:
-            metrics['kl_avg_layerwise'] = aux['kl_avg_layerwise']
+        if 'kl_avg_layerwise' in model_out:
+            output['kl_avg_layerwise'] = model_out['kl_avg_layerwise']
 
-        return metrics
+        return output
 
 
     @staticmethod

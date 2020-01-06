@@ -187,7 +187,8 @@ class LadderVAE(BaseModel):
         kl_loss = self.get_free_bits_kl(kl).sum(1).mean(0)
         kl = kl_sep.mean()
 
-        aux_out = {
+        data = {
+            'll': ll,
             'z': z,
             'kl': kl,
             'kl_sep': kl_sep,
@@ -200,7 +201,7 @@ class LadderVAE(BaseModel):
             'likelihood_params': likelihood_info['params']
         }
 
-        return ll, aux_out
+        return data
 
 
     def bottomup_pass(self, x):
