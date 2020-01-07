@@ -4,33 +4,55 @@ from urllib import request
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader, TensorDataset
+from torch.utils.data._utils.collate import default_collate
 
 
 class MultiObjectDataLoader(DataLoader):
 
     def __init__(self, *args, **kwargs):
         assert 'collate_fn' not in kwargs
-        kwargs['collate_fn'] = self.custom_collate
+        kwargs['collate_fn'] = self.collate_fn
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def custom_collate(batch):
-        # Input is a batch of (image, label_dict)
+    def collate_fn(batch):
+
+        # The input is a batch of (image, label_dict)
         _, item_labels = batch[0]
         keys = item_labels.keys()
 
-        # Simply stack images into a tensor
-        imgs = [item[0] for item in batch]
-        imgs = torch.stack(imgs, dim=0)
+        # Max label length in this batch
+        # max_len[k] is the maximum length (in batch) of the label with name k
+        # If at the end max_len[k] is -1, labels k are (probably all) scalars
+        max_len = {k: -1 for k in keys}
 
-        # All labels will be lists, because they might have variable length
-        # across the batch.
-        # Item is batch[i], second element is label dict, pick attribute k.
-        labels = {
-            k: [item[1][k] for item in batch]
-            for k in keys}
+        # If a label has more than 1 dimension, the padded tensor cannot simply
+        # have size (batch, max_len). Whenever the length is >0 (i.e. the sequence
+        # is not empty, store trailing dimensions. At the end if 1) all sequences
+        # (in the batch, and for this label) are empty, or 2) this label is not
+        # a sequence (scalar), then the trailing dims are None.
+        trailing_dims = {k: None for k in keys}
 
-        return imgs, labels
+        # Make first pass to get shape info for padding
+        for _, labels in batch:
+            for k in keys:
+                try:
+                    max_len[k] = max(max_len[k], len(labels[k]))
+                    if len(labels[k]) > 0:
+                        trailing_dims[k] = labels[k].size()[1:]
+                except TypeError:   # scalar
+                    pass
+
+        # For each item in the batch, take each key and pad the corresponding
+        # value (label) so we can call the default collate function
+        for i in range(len(batch)):
+            for k in keys:
+                if trailing_dims[k] is None:
+                    continue
+                size = [max_len[k]] + list(trailing_dims[k])
+                batch[i][1][k] = _pad_tensor(batch[i][1][k], size)
+
+        return default_collate(batch)
 
 
 class MultiObjectDataset(Dataset):
@@ -136,3 +158,18 @@ class StaticBinaryMnist(TensorDataset):
             np.random.shuffle(data[split])
 
         return data[split]
+
+
+def _pad_tensor(x, size, value=None):
+    assert isinstance(x, torch.Tensor)
+    input_size = len(x)
+    if value is None:
+        value = float('nan')
+
+    # Copy input tensor into a tensor filled with specified value
+    # Convert everything to float, not ideal but it's robust
+    out = torch.zeros(*size, dtype=torch.float)
+    out.fill_(value)
+    if input_size > 0:  # only if at least one element in the sequence
+        out[:input_size] = x.float()
+    return out

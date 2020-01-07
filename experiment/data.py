@@ -68,9 +68,6 @@ class DatasetLoader:
             train_set = MultiObjectDataset(data_path, train=True)
             test_set = MultiObjectDataset(data_path, train=False)
 
-            # Custom data loader not compatible with multiprocessing for now
-            kwargs['num_workers'] = 0
-
             # Custom data loaders
             self.train = MultiObjectDataLoader(
                 train_set,
