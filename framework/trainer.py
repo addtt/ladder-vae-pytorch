@@ -81,7 +81,7 @@ class Trainer:
 
         # Main loop
         for epoch in range(1, e.max_epochs + 1):
-            for batch_idx, (x, _) in enumerate(train_loader):
+            for batch_idx, (x, y) in enumerate(train_loader):
 
                 step = e.model.global_step
                 if step % e.args.test_log_interval == 0:
@@ -102,7 +102,7 @@ class Trainer:
                 e.optimizer.zero_grad()
 
                 # Forward pass: get loss and other info
-                outputs = e.forward(e.model, x)
+                outputs = e.forward(e.model, x, y)
 
                 # Compute gradients (backward pass)
                 outputs['loss'].backward()
