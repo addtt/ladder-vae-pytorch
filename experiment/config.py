@@ -396,14 +396,10 @@ class ExperimentConfig(BaseExperimentConfig):
             )
 
 
-    def forward(self, model, x):
+    def forward(self, model, x, y=None):
         """
         Simple single-pass model evaluation. It consists of a forward pass
         and computation of all necessary losses and metrics.
-
-        :param model:
-        :param x:
-        :return:
         """
 
         # Forward pass

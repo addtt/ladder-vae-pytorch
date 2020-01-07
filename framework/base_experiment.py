@@ -65,13 +65,15 @@ class BaseExperimentConfig:
         raise NotImplementedError
 
 
-    def forward(self, model, x):
+    def forward(self, model, x, y=None):
         """
         Simple single-pass model evaluation. It consists of a forward pass
-        and computation of all necessary losses and metrics.
+        and computation of all necessary losses and metrics. The last argument
+        is optional. It can be used for example for labels in supervised learning.
 
         :param model:
         :param x:
+        :param y:
         :return:
         """
         raise NotImplementedError
