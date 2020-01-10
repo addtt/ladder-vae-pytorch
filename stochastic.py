@@ -124,6 +124,7 @@ def logistic_rsample(mu_ls):
 def sample_from_discretized_mix_logistic(l):
     """
     Code taken from pytorch adaptation of original PixelCNN++ tf implementation
+    https://github.com/pclucas14/pixel-cnn-pp
     """
     # Pytorch ordering
     l = l.permute(0, 2, 3, 1)

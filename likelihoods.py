@@ -308,6 +308,7 @@ def discretized_mix_logistic_loss(x, l):
     has been rescaled to [-1,1] interval
 
     Code taken from pytorch adaptation of original PixelCNN++ tf implementation
+    https://github.com/pclucas14/pixel-cnn-pp
     """
 
     # channels last
