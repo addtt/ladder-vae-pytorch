@@ -20,9 +20,8 @@ class LadderVAE(BaseModel):
     def __init__(self, color_ch, z_dims, blocks_per_layer=2, downsample=None,
                  nonlin='elu', merge_type=None, batchnorm=True,
                  stochastic_skip=False, n_filters=32, dropout=None,
-                 free_bits=0.0, learn_top_prior=False, likelihood=None,
-                 img_shape=None, likelihood_form=None, res_block_type=None,
-                 gated=False):
+                 free_bits=0.0, learn_top_prior=False, img_shape=None,
+                 likelihood_form=None, res_block_type=None, gated=False):
         super().__init__()
         self.color_ch = color_ch
         self.z_dims = z_dims
@@ -34,7 +33,6 @@ class LadderVAE(BaseModel):
         self.dropout = dropout
         self.free_bits = free_bits
         self.learn_top_prior = learn_top_prior
-        self.likelihood = likelihood
         self.img_shape = tuple(img_shape)
         self.res_block_type = res_block_type
         self.gated = gated
