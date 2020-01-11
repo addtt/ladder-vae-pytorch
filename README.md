@@ -120,15 +120,6 @@ even within a row.
 ![MNIST layers 12](_readme_figs/layers_mnist/sample_mode_layer11.png)
 
 
-#### Multi-dSprites: layers 3, 7, 10, and 12 (top)
-
-![MNIST layers 4](_readme_figs/layers_multidsprites/sample_mode_layer2.png)&nbsp;&nbsp;
-![MNIST layers 8](_readme_figs/layers_multidsprites/sample_mode_layer6.png)
-
-![MNIST layers 10](_readme_figs/layers_multidsprites/sample_mode_layer9.png)&nbsp;&nbsp;
-![MNIST layers 12](_readme_figs/layers_multidsprites/sample_mode_layer11.png)
-
-
 #### SVHN: layers 4, 10, 13, and 15 (top)
 
 ![SVHN layers 4](_readme_figs/layers_svhn/sample_mode_layer3.png)&nbsp;&nbsp;
@@ -156,6 +147,15 @@ even within a row.
 ![CelebA layers 16](_readme_figs/layers_celeba/sample_mode_layer15.png)
 
 ![CelebA layers 20](_readme_figs/layers_celeba/sample_mode_layer19.png)
+
+
+#### Multi-dSprites: layers 3, 7, 10, and 12 (top)
+
+![MNIST layers 4](_readme_figs/layers_multidsprites/sample_mode_layer2.png)&nbsp;&nbsp;
+![MNIST layers 8](_readme_figs/layers_multidsprites/sample_mode_layer6.png)
+
+![MNIST layers 10](_readme_figs/layers_multidsprites/sample_mode_layer9.png)&nbsp;&nbsp;
+![MNIST layers 12](_readme_figs/layers_multidsprites/sample_mode_layer11.png)
 
 
 
