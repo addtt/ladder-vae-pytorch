@@ -31,6 +31,7 @@ Log likelihood bounds on the test set. Final results coming soon.
 | binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
 | binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
 | binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
+| multi-dSprites  | 12         | 26.9         | 23.2          |     |
 | SVHN            | 15         | 4012 (1.88)  | 3973 (1.87)   |     |
 | CIFAR10         | 15         | 7128 (3.35)  | 7068 (3.32)   |     |
 | CelebA          | 20         | 20026 (2.35) | 19913 (2.34)  |     |
@@ -59,6 +60,10 @@ Note:
 #### Binarized MNIST
 
 ![MNIST samples](_readme_figs/mnist_sample_1.png)
+
+#### Multi-dSprites
+
+![multi-dSprites samples](_readme_figs/multidsprites_sample_1_downsc.png)
 
 #### SVHN
 
@@ -113,6 +118,15 @@ even within a row.
 
 ![MNIST layers 10](_readme_figs/layers_mnist/sample_mode_layer9.png)&nbsp;&nbsp;
 ![MNIST layers 12](_readme_figs/layers_mnist/sample_mode_layer11.png)
+
+
+#### Multi-dSprites: layers 3, 7, 10, and 12 (top)
+
+![MNIST layers 4](_readme_figs/layers_multidsprites/sample_mode_layer2.png)&nbsp;&nbsp;
+![MNIST layers 8](_readme_figs/layers_multidsprites/sample_mode_layer6.png)
+
+![MNIST layers 10](_readme_figs/layers_multidsprites/sample_mode_layer9.png)&nbsp;&nbsp;
+![MNIST layers 12](_readme_figs/layers_multidsprites/sample_mode_layer11.png)
 
 
 #### SVHN: layers 4, 10, 13, and 15 (top)
