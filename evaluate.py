@@ -8,7 +8,8 @@ import torch.utils.data
 from torchvision.utils import save_image
 
 from experiment.config import ExperimentConfig
-from framework.utils import set_rnd_seed, get_date_str, get_imgs_pad_value
+from framework.utils import set_rnd_seed, get_date_str
+from utils import get_imgs_pad_value
 
 default_run = ""
 
