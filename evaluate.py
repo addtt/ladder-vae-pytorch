@@ -46,7 +46,7 @@ def main():
     model = experiment.model
 
     # Load weights
-    model.load(checkpoint_folder, eval_args.load_step)
+    model.load(checkpoint_folder, device, step=eval_args.load_step)
 
     with torch.no_grad():
         model.eval()

@@ -28,7 +28,7 @@ class BaseModel(nn.Module):
         path = join(ckpt_folder, "model_{}.pt".format(self.global_step))
         torch.save(self.state_dict(), path)
 
-    def load(self, ckpt_folder, step=None):
+    def load(self, ckpt_folder, device=None, step=None):
         if step is None:
             filenames = list(filter(lambda n: "model_" in n, os.listdir(ckpt_folder)))
             regex = re.compile(r'\d+')
@@ -39,6 +39,6 @@ class BaseModel(nn.Module):
             ckpt_name = "model_{}.pt".format(step)
         print("Loading model checkpoint at step {}...".format(step))
         path = join(ckpt_folder, ckpt_name)
-        self.load_state_dict(torch.load(path))
+        self.load_state_dict(torch.load(path, map_location=device))
         self.global_step = step
         print("Loaded.")
