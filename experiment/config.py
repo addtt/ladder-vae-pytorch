@@ -15,7 +15,7 @@ from experiment.data import DatasetLoader
 from framework.base_experiment import BaseExperimentConfig
 from framework.init import data_dependent_init
 from framework.summarize import SummarizerCollection
-from framework.utils import print_num_params, linear_anneal
+from framework.utils import print_num_params, linear_anneal, get_imgs_pad_value
 from models.lvae import LadderVAE
 
 sns.set()
@@ -577,8 +577,9 @@ class ExperimentConfig(BaseExperimentConfig):
 
             # Save model samples
             sample = self.model.sample_prior(n ** 2)
+            pad_value = get_imgs_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_' + str(step) + '.png')
-            save_image(sample, fname, nrow=n)
+            save_image(sample, fname, nrow=n, pad_value=pad_value)
 
             # Get first test batch
             (x, _) = next(iter(self.dataloaders.test))
@@ -601,4 +602,5 @@ class ExperimentConfig(BaseExperimentConfig):
             outputs['out_sample'][:n_img]])
         imgs = imgs.permute(1, 0, 2, 3, 4)
         imgs = imgs.reshape(n ** 2, x.size(1), x.size(2), x.size(3))
-        save_image(imgs.cpu(), fname, nrow=n)
+        pad_value = get_imgs_pad_value(imgs)
+        save_image(imgs.cpu(), fname, nrow=n, pad_value=pad_value)

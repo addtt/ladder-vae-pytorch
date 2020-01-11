@@ -7,9 +7,8 @@ import torch
 import torch.utils.data
 from torchvision.utils import save_image
 
-import framework.utils
 from experiment.config import ExperimentConfig
-from framework.utils import set_rnd_seed
+from framework.utils import set_rnd_seed, get_date_str, get_imgs_pad_value
 
 default_run = ""
 
@@ -19,7 +18,7 @@ def main():
     set_rnd_seed(eval_args.seed)
     use_cuda = not eval_args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    date_str = framework.utils.get_date_str()
+    date_str = get_date_str()
     print('device: {}, start time: {}'.format(device, date_str))
 
     # Get path to load model
@@ -59,8 +58,9 @@ def main():
         # Prior samples
         for i in range(eval_args.prior_samples):
             sample = model.sample_prior(n ** 2)
+            pad_value = get_imgs_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_' + str(i) + '.png')
-            save_image(sample, fname, nrow=n)
+            save_image(sample, fname, nrow=n, pad_value=pad_value)
 
         fname = os.path.join(img_folder, 'reconstruction.png')
         (x, _) = next(iter(experiment.dataloaders.test))
@@ -95,8 +95,9 @@ def inspect_layer_repr(model, img_folder, n=8, mode=2):
                         optimized_layers=mode_layers,
                         gradient_steps=0))
             sample = torch.cat(sample)
+            pad_value = get_imgs_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
-            save_image(sample, fname, nrow=n)
+            save_image(sample, fname, nrow=n, pad_value=pad_value)
 
         # Sample top layers once, then take many samples of a middle layer,
         # then sample from the mode in all downstream layers.
@@ -109,8 +110,9 @@ def inspect_layer_repr(model, img_folder, n=8, mode=2):
                         mode_layers=mode_layers,
                         constant_layers=constant_layers))
             sample = torch.cat(sample)
+            pad_value = get_imgs_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
-            save_image(sample, fname, nrow=n)
+            save_image(sample, fname, nrow=n, pad_value=pad_value)
 
 
 def parse_args():
