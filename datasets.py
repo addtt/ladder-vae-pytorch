@@ -127,32 +127,36 @@ class StaticBinaryMnist(TensorDataset):
             raise ValueError("Valid splits: {}".format(subdatasets))
         data = {}
 
-        if not os.path.exists(folder):
+        fname = 'binarized_mnist_{}.npz'.format(split)
+        path = os.path.join(folder, fname)
+
+        if not os.path.exists(path):
+            print("Dataset file '{}' not found".format(path))
             if not self.download:
                 msg = "Dataset not found, use download=True to download it"
                 raise RuntimeError(msg)
 
-            os.makedirs(folder)
+            print("Downloading whole dataset...")
+
+            os.makedirs(folder, exist_ok=True)
 
             for subdataset in subdatasets:
-                filename = 'binarized_mnist_{}.amat'.format(subdataset)
+                fname_mat = 'binarized_mnist_{}.amat'.format(subdataset)
                 url = ('http://www.cs.toronto.edu/~larocheh/public/datasets/'
-                       'binarized_mnist/binarized_mnist_{}.amat'.format(subdataset))
-                local_filename = os.path.join(folder, filename)
-                request.urlretrieve(url, local_filename)
+                       'binarized_mnist/{}'.format(fname_mat))
+                path_mat = os.path.join(folder, fname_mat)
+                request.urlretrieve(url, path_mat)
 
-                with open(os.path.join(folder, filename)) as f:
+                with open(path_mat) as f:
                     lines = f.readlines()
 
-                os.remove(local_filename)
+                os.remove(path_mat)
                 lines = np.array([[int(i) for i in line.split()] for line in lines])
                 data[subdataset] = lines.astype('float32').reshape((-1, 1, 28, 28))
-                np.savez_compressed(local_filename.split(".amat")[0], data=data[subdataset])
+                np.savez_compressed(path_mat.split(".amat")[0], data=data[subdataset])
 
         else:
-            filename = 'binarized_mnist_{}.npz'.format(split)
-            local_filename = os.path.join(folder, filename)
-            data[split] = np.load(local_filename)['data']
+            data[split] = np.load(path)['data']
 
         if shuffle_init:
             np.random.shuffle(data[split])
