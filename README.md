@@ -169,8 +169,9 @@ even within a row.
 I did not perform an extensive hyperparameter search, but this worked pretty well:
 
 - Downsampling by a factor of 2 in the beginning of inference.
-  After that, activations are downsampled 4 times for 64x64 images (CelebA), and
-  3 times otherwise. The spatial size of the final feature map is always 2x2.
+  After that, activations are downsampled 4 times for 64x64 images (CelebA and 
+  multi-dSprites), and 3 times otherwise. The spatial size of the final feature 
+  map is always 2x2.
   Between these downsampling steps there is approximately the same number of
   stochastic layers.
 - 4 residual blocks between stochastic layers. Haven't tried with more
