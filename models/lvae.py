@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from boilr import BaseGenerativeModel
 from torch import nn
 
 from likelihoods import (
@@ -7,16 +8,15 @@ from likelihoods import (
     GaussianLikelihood,
     DiscretizedLogisticLikelihood,
     DiscretizedLogisticMixLikelihood)
-from models.base import BaseModel
-from models.lvae_layers import (
+from nn import crop_img_tensor, pad_img_tensor, Interpolate
+from .lvae_layers import (
     TopDownLayer,
     BottomUpLayer,
     TopDownDeterministicResBlock,
     BottomUpDeterministicResBlock)
-from nn import crop_img_tensor, pad_img_tensor, Interpolate
 
 
-class LadderVAE(BaseModel):
+class LadderVAE(BaseGenerativeModel):
     def __init__(self, color_ch, z_dims, blocks_per_layer=2, downsample=None,
                  nonlin='elu', merge_type=None, batchnorm=True,
                  stochastic_skip=False, n_filters=32, dropout=None,

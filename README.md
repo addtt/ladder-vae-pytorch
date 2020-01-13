@@ -14,11 +14,16 @@ rather than only on _the_ layer above (see for example [2])
 - spatial (convolutional) latent variables
 - free bits [3] instead of beta annealing [4]
 
-Example to run MNIST:
+### Install requirements and run MNIST example
 
 ```
+pip install -r requirements.txt
 CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 32 --downsample 0 0 1 0 0 1 0 0 0 1 0 0 --nonlin elu --skip --blocks-per-layer 4 --gated --test-batch-size 2000 --freebits 1.0 --tr-log-interv 10000 --ts-log-interv 10000 --ckpt-interv 100000 --ll-interv 50000 --ll-samples 100 --learn-top-prior --data-dep-init --seed 42 --dataset static_mnist
 ```
+
+Dependencies include [boilr](https://github.com/addtt/boiler-pytorch) (a framework 
+for PyTorch) and [multiobject](https://github.com/addtt/multi-object-datasets)
+(which provides multi-object datasets with PyTorch dataloaders).
 
 
 
@@ -193,12 +198,17 @@ With these settings, the number of parameters is roughly 1M per stochastic
 
 ## Requirements
 
-Tested with (not strict requirements):
+Tested with:
 ```
-python 3.6.8
-pytorch 1.3.1
+python 3.7.6
+numpy==1.18.1
+torch 1.3.1
 torchvision 0.4.2
-numpy 1.17.4
+matplotlib==3.1.2
+seaborn==0.9.0
+pillow==6.2.2
+boilr==0.1.1
+multiobject==0.0.1
 ```
 
 ## References

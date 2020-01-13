@@ -1,9 +1,10 @@
-from experiment.config import ExperimentConfig
-from framework.trainer import Trainer
+from boilr import Trainer
+
+from experiment import LVAEExperiment
 
 
 def main():
-    experiment = ExperimentConfig()
+    experiment = LVAEExperiment()
     trainer = Trainer(experiment)
     trainer.run()
 

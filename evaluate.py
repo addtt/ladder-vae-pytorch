@@ -5,10 +5,10 @@ from os import path
 
 import torch
 import torch.utils.data
+from boilr.utils import set_rnd_seed, get_date_str
 from torchvision.utils import save_image
 
-from experiment.config import ExperimentConfig
-from framework.utils import set_rnd_seed, get_date_str
+from experiment.experiment_manager import LVAEExperiment
 from utils import get_imgs_pad_value
 
 default_run = ""
@@ -40,7 +40,7 @@ def main():
     args.test_batch_size = eval_args.test_batch_size
     args.dry_run = False
 
-    experiment = ExperimentConfig(args=args)
+    experiment = LVAEExperiment(args=args)
 
     experiment.setup(device, create_optimizer=False)
     model = experiment.model

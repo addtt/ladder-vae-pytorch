@@ -1,9 +1,9 @@
+from multiobject.pytorch import MultiObjectDataset, MultiObjectDataLoader
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, SVHN, CelebA
 
 from datasets import StaticBinaryMnist
-from multiobject.pytorch import MultiObjectDataset, MultiObjectDataLoader
 
 
 class DatasetLoader:
