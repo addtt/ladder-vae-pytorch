@@ -3,8 +3,6 @@ import torch
 from torch import nn
 from torch.distributions.normal import Normal
 
-from utils import to_one_hot
-
 
 class NormalStochasticBlock2d(nn.Module):
     def __init__(self, c_in, c_vars, c_out, kernel=3, transform_p_params=True):
@@ -63,7 +61,7 @@ class NormalStochasticBlock2d(nn.Module):
             m, lv = q_params.chunk(2, dim=1)
             q = Normal(m, (lv / 2).exp())
             logprob_q = q.log_prob(z).sum((1, 2, 3))
-            kl_elementwise = kl_normal(z, p_params, q_params)
+            kl_elementwise = kl_normal_mc(z, p_params, q_params)
             kl_samplewise = kl_elementwise.sum((1, 2, 3))
 
         data = {
@@ -126,6 +124,14 @@ def sample_from_discretized_mix_logistic(l):
     Code taken from pytorch adaptation of original PixelCNN++ tf implementation
     https://github.com/pclucas14/pixel-cnn-pp
     """
+
+    def to_one_hot(tensor, n):
+        one_hot = torch.zeros(tensor.size() + (n,))
+        one_hot = one_hot.to(tensor.device)
+        one_hot.scatter_(len(tensor.size()), tensor.unsqueeze(-1), 1.)
+        return one_hot
+
+
     # Pytorch ordering
     l = l.permute(0, 2, 3, 1)
     ls = [int(y) for y in l.size()]
@@ -171,7 +177,7 @@ def sample_from_discretized_mix_logistic(l):
     return out
 
 
-def kl_normal(z, p_mulv, q_mulv):
+def kl_normal_mc(z, p_mulv, q_mulv):
     """
     One-sample estimation of element-wise KL between two diagonal
     multivariate normal distributions. Any number of dimensions,

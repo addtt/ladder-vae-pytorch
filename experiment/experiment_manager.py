@@ -4,12 +4,11 @@ import os
 import torch
 from boilr import VIExperimentManager
 from boilr.nn_init import data_dependent_init
-from boilr.utils import linear_anneal
+from boilr.utils import linear_anneal, img_grid_pad_value
 from torch import optim
 from torchvision.utils import save_image
 
 from models.lvae import LadderVAE
-from utils import get_imgs_pad_value
 from .data import DatasetLoader
 
 
@@ -425,7 +424,7 @@ class LVAEExperiment(VIExperimentManager):
 
             # Save model samples
             sample = self.model.sample_prior(n ** 2)
-            pad_value = get_imgs_pad_value(sample)
+            pad_value = img_grid_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_' + str(step) + '.png')
             save_image(sample, fname, nrow=n, pad_value=pad_value)
 
@@ -450,5 +449,5 @@ class LVAEExperiment(VIExperimentManager):
             outputs['out_sample'][:n_img]])
         imgs = imgs.permute(1, 0, 2, 3, 4)
         imgs = imgs.reshape(n ** 2, x.size(1), x.size(2), x.size(3))
-        pad_value = get_imgs_pad_value(imgs)
+        pad_value = img_grid_pad_value(imgs)
         save_image(imgs.cpu(), fname, nrow=n, pad_value=pad_value)
