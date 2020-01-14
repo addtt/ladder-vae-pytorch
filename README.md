@@ -31,15 +31,15 @@ for PyTorch) and [multiobject](https://github.com/addtt/multi-object-datasets)
 
 Log likelihood bounds on the test set. Final results coming soon.
 
-|  dataset        | num layers | -ELBO        | - log _p(x)_ ≤ <br> [100 iws] | - log _p(x)_ ≤ <br> [1000 iws] |
-| --------------- |:----------:|:------------:|:-------------:|:--------------:|
-| binarized MNIST | 3          | 82.14        | 79.47         | 79.24          |
-| binarized MNIST | 6          | 80.74        | 78.65         | 78.52          |
-| binarized MNIST | 12         | 80.50        | 78.50         | 78.30          |
-| multi-dSprites  | 12         | 26.9         | 23.2          |     |
-| SVHN            | 15         | 4012 (1.88)  | 3973 (1.87)   |     |
-| CIFAR10         | 15         | 7128 (3.35)  | 7068 (3.32)   |     |
-| CelebA          | 20         | 20026 (2.35) | 19913 (2.34)  |     |
+|  dataset             | num layers | -ELBO        | - log _p(x)_ ≤ <br> [100 iws] | - log _p(x)_ ≤ <br> [1000 iws] |
+| -------------------- |:----------:|:------------:|:-------------:|:--------------:|
+| binarized MNIST      | 3          | 82.14        | 79.47         | 79.24          |
+| binarized MNIST      | 6          | 80.74        | 78.65         | 78.52          |
+| binarized MNIST      | 12         | 80.50        | 78.50         | 78.30          |
+| multi-dSprites (0-2) | 12         | 26.9         | 23.2          |     |
+| SVHN                 | 15         | 4012 (1.88)  | 3973 (1.87)   |     |
+| CIFAR10              | 15         | 7128 (3.35)  | 7068 (3.32)   |     |
+| CelebA               | 20         | 20026 (2.35) | 19913 (2.34)  |     |
 
 Note:
 - Bits per dimension in brackets.
@@ -189,7 +189,7 @@ I did not perform an extensive hyperparameter search, but this worked pretty wel
   See code for details.
 - freebits=1.0 in experiments with more than 6 stochastic layers, and 0.5 for
   smaller models.
-- For everything else, see defaults in `experiment.config._parse_args()`.
+- For everything else, see `_parse_args()` in `experiment/experiment_manager.py`.
 
 With these settings, the number of parameters is roughly 1M per stochastic
   layer. I tried to control for this by experimenting e.g. with half the number
@@ -208,7 +208,7 @@ torchvision 0.4.2
 matplotlib==3.1.2
 seaborn==0.9.0
 pillow==6.2.2
-boilr==0.1.1
+boilr==0.3.1
 multiobject==0.0.1
 ```
 
