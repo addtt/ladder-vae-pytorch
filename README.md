@@ -208,8 +208,8 @@ torchvision 0.4.2
 matplotlib==3.1.2
 seaborn==0.9.0
 pillow==6.2.2
-boilr==0.3.1
-multiobject==0.0.1
+boilr==0.4.0
+multiobject==0.0.3
 ```
 
 ## References

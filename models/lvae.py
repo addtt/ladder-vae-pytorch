@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from boilr import BaseGenerativeModel
+from boilr.nn import crop_img_tensor, pad_img_tensor, Interpolate
 from torch import nn
 
 from likelihoods import (
@@ -8,7 +9,6 @@ from likelihoods import (
     GaussianLikelihood,
     DiscretizedLogisticLikelihood,
     DiscretizedLogisticMixLikelihood)
-from nn import crop_img_tensor, pad_img_tensor, Interpolate
 from .lvae_layers import (
     TopDownLayer,
     BottomUpLayer,
