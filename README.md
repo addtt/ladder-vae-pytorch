@@ -203,11 +203,10 @@ Tested with:
 ```
 python 3.7.6
 numpy==1.18.1
-torch 1.3.1
-torchvision 0.4.2
+torch 1.4.0
+torchvision 0.5.0
 matplotlib==3.1.2
 seaborn==0.9.0
-pillow==6.2.2
 boilr==0.4.0
 multiobject==0.0.3
 ```
