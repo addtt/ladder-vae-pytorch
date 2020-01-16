@@ -202,13 +202,13 @@ With these settings, the number of parameters is roughly 1M per stochastic
 Tested with:
 ```
 python 3.7.6
-numpy==1.18.1
+numpy 1.18.1
 torch 1.4.0
 torchvision 0.5.0
-matplotlib==3.1.2
-seaborn==0.9.0
-boilr==0.4.0
-multiobject==0.0.3
+matplotlib 3.1.2
+seaborn 0.9.0
+boilr 0.4.0
+multiobject 0.0.3
 ```
 
 ## References
