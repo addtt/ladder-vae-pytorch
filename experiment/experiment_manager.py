@@ -53,7 +53,7 @@ class LVAEExperiment(VIExperimentManager):
             img_shape=self.dataloaders.img_size,
             likelihood_form=args.likelihood,
             gated=args.gated,
-        )
+        ).to(self.device)
 
         # Weight initialization
         if args.simple_data_dependent_init:
@@ -63,7 +63,7 @@ class LVAEExperiment(VIExperimentManager):
             t = torch.stack(tuple(t[i][0] for i in range(len(t))))
 
             # Use batch for data dependent init
-            data_dependent_init(self.model, {'x': t.to(self.device)})
+            data_dependent_init(model, {'x': t.to(self.device)})
 
         return model
 
