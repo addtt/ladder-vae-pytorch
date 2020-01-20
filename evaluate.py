@@ -57,12 +57,10 @@ def main():
 
         # Inspect representations learned by each layer
         if eval_args.inspect_layer_repr:
-            print('inspect')
             inspect_layer_repr(model, img_folder, n=8)
 
         # Prior samples
         for i in range(eval_args.prior_samples):
-            print('prior')
             sample = model.sample_prior(n ** 2)
             pad_value = img_grid_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_' + str(i) + '.png')
