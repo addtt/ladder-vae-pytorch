@@ -94,7 +94,8 @@ class LVAEExperiment(VIExperimentManager):
         legal_nonlin = ['relu', 'leakyrelu', 'elu', 'selu']
         legal_resblock = ['cabdcabd', 'bacdbac', 'bacdbacd']
         legal_datasets = ['static_mnist', 'cifar10', 'celeba',
-                          'multi_dsprites_binary_rgb', 'svhn']
+                          'svhn', 'multi_dsprites_binary_rgb',
+                          'multi_mnist_binary']
         legal_likelihoods = ['bernoulli', 'gaussian',
                              'discr_log', 'discr_log_mix']
 
@@ -257,6 +258,7 @@ class LVAEExperiment(VIExperimentManager):
         likelihood_map = {
             'static_mnist': 'bernoulli',
             'multi_dsprites_binary_rgb': 'bernoulli',
+            'multi_mnist_binary': 'bernoulli',
             'cifar10': 'discr_log_mix',
             'celeba': 'discr_log_mix',
             'svhn': 'discr_log_mix',

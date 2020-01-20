@@ -6,6 +6,13 @@ from torchvision.datasets import CIFAR10, SVHN, CelebA
 from datasets import StaticBinaryMnist
 
 
+multiobject_paths = {
+    'multi_mnist_binary': './data/multi_mnist/multi_binary_mnist_012.npz',
+    'multi_dsprites_binary_rgb': './data/multi-dsprites-binary-rgb/multi_dsprites_color_012.npz',
+}
+multiobject_datasets = multiobject_paths.keys()
+
+
 class DatasetLoader:
     """
     Wrapper for DataLoaders. Data attributes:
@@ -20,8 +27,8 @@ class DatasetLoader:
 
         kwargs = {'num_workers': 1, 'pin_memory': False} if cuda else {}
 
-        # Init dataloaders to None
-        self.train = self.test = None
+        # Default dataloader class
+        dataloader_class = DataLoader
 
         if args.dataset_name == 'static_mnist':
             data_folder = './data/static_bin_mnist/'
@@ -64,47 +71,30 @@ class DatasetLoader:
             test_set = CelebA(data_folder, split='valid',
                               download=True, transform=transform)
 
-        elif args.dataset_name == 'multi_dsprites_binary_rgb':
-            data_path = './data/multi-dsprites-binary-rgb/multi_dsprites_color_012.npz'
+        elif args.dataset_name in multiobject_datasets:
+            data_path = multiobject_paths[args.dataset_name]
             train_set = MultiObjectDataset(data_path, train=True)
             test_set = MultiObjectDataset(data_path, train=False)
 
-            # Custom data loaders
-            self.train = MultiObjectDataLoader(
-                train_set,
-                batch_size=args.batch_size,
-                shuffle=True,
-                drop_last=True,
-                **kwargs
-            )
-            self.test = MultiObjectDataLoader(
-                test_set,
-                batch_size=args.test_batch_size,
-                shuffle=False,
-                **kwargs
-            )
+            # Custom data loader class
+            dataloader_class = MultiObjectDataLoader
 
         else:
             raise RuntimeError("Unrecognized data set '{}'".format(args.dataset_name))
 
-        # Default training set loader if it hasn't been defined yet
-        if self.train is None:
-            self.train = DataLoader(
-                train_set,
-                batch_size=args.batch_size,
-                shuffle=True,
-                drop_last=True,
-                **kwargs
-            )
-
-        # Default test set loader if it hasn't been defined yet
-        if self.test is None:
-            self.test = DataLoader(
-                test_set,
-                batch_size=args.test_batch_size,
-                shuffle=False,
-                **kwargs
-            )
+        self.train = dataloader_class(
+            train_set,
+            batch_size=args.batch_size,
+            shuffle=True,
+            drop_last=True,
+            **kwargs
+        )
+        self.test = dataloader_class(
+            test_set,
+            batch_size=args.test_batch_size,
+            shuffle=False,
+            **kwargs
+        )
 
         self.data_shape = self.train.dataset[0][0].size()
         self.img_size = self.data_shape[1:]
