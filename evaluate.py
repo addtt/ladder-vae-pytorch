@@ -1,6 +1,11 @@
+"""
+Standalone script for a couple of simple evaluations/tests of trained models.
+"""
+
 import argparse
 import os
 import pickle
+import warnings
 from os import path
 
 import torch
@@ -10,9 +15,8 @@ from torchvision.utils import save_image
 
 from experiment.experiment_manager import LVAEExperiment
 
-# TODO this file is not up to date with the new boilr
-
-default_run = ""
+default_run = "200120_111817_multi_dsprites_binary_rgb,2ly,1bpl," \
+              "block=bacdbacd,elu,dropout=0.2,seed54321,TEST"
 
 def main():
     eval_args = parse_args()
@@ -42,12 +46,10 @@ def main():
     args.dry_run = False
 
     experiment = LVAEExperiment(args=args)
+    experiment.device = device
 
-    experiment.setup(device, create_optimizer=False)
+    experiment.setup(checkpoint_folder)
     model = experiment.model
-
-    # Load weights
-    model.load(checkpoint_folder, device, step=eval_args.load_step)
 
     with torch.no_grad():
         model.eval()
@@ -55,15 +57,18 @@ def main():
 
         # Inspect representations learned by each layer
         if eval_args.inspect_layer_repr:
+            print('inspect')
             inspect_layer_repr(model, img_folder, n=8)
 
         # Prior samples
         for i in range(eval_args.prior_samples):
+            print('prior')
             sample = model.sample_prior(n ** 2)
             pad_value = img_grid_pad_value(sample)
             fname = os.path.join(img_folder, 'sample_' + str(i) + '.png')
             save_image(sample, fname, nrow=n, pad_value=pad_value)
 
+        # Save input and reconstructions
         fname = os.path.join(img_folder, 'reconstruction.png')
         (x, _) = next(iter(experiment.dataloaders.test))
         experiment.save_input_and_recons(x, fname, n)
@@ -73,12 +78,8 @@ def main():
         experiment.print_test_log(summaries)
 
 
-
 def inspect_layer_repr(model, img_folder, n=8, mode=2):
     for i in range(model.n_layers):
-
-        # if i not in [0, 3, 6, 10, 13, 16, 19]:
-        #     continue
 
         print('layer', i)
 
@@ -173,6 +174,10 @@ def parse_args():
     args = parser.parse_args()
     if not args.ll:
         args.iw_samples = 1
+    if args.load_step is not None:
+        warnings.warn(
+            "Loading weights from specific training step is not supported for "
+            "now. The model will be loaded from the last checkpoint.")
     return args
 
 
