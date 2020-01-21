@@ -53,6 +53,7 @@ class LVAEExperiment(VIExperimentManager):
             img_shape=self.dataloaders.img_size,
             likelihood_form=args.likelihood,
             gated=args.gated,
+            no_initial_downscaling=args.no_initial_downscaling,
         ).to(self.device)
 
         # Weight initialization
@@ -237,6 +238,12 @@ class LVAEExperiment(VIExperimentManager):
                             metavar='N',
                             dest='free_bits',
                             help='free bits (nats)')
+
+        parser.add_argument('--no-initial-downscaling',
+                            action='store_true',
+                            dest='no_initial_downscaling',
+                            help='do not downscale as first inference step (and'
+                                 'upscale as last generation step)')
 
         args = parser.parse_args()
 

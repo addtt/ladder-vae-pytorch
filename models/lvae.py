@@ -21,7 +21,8 @@ class LadderVAE(BaseGenerativeModel):
                  nonlin='elu', merge_type=None, batchnorm=True,
                  stochastic_skip=False, n_filters=32, dropout=None,
                  free_bits=0.0, learn_top_prior=False, img_shape=None,
-                 likelihood_form=None, res_block_type=None, gated=False):
+                 likelihood_form=None, res_block_type=None, gated=False,
+                 no_initial_downscaling=False):
         super().__init__()
         self.color_ch = color_ch
         self.z_dims = z_dims
@@ -42,7 +43,9 @@ class LadderVAE(BaseGenerativeModel):
             self.downsample = [0] * self.n_layers
 
         # Downsample by a factor of 2 at each downsampling operation
-        self.overall_downscale_factor = 2 * np.power(2, sum(self.downsample))
+        self.overall_downscale_factor = np.power(2, sum(self.downsample))
+        if not no_initial_downscaling:   # by default do another downscaling
+            self.overall_downscale_factor *= 2
 
         assert max(self.downsample) <= self.blocks_per_layer
         assert len(self.downsample) == self.n_layers
@@ -56,8 +59,10 @@ class LadderVAE(BaseGenerativeModel):
         }[nonlin]
 
         # First bottom-up layer: change num channels + downsample by factor 2
+        # unless we want to prevent this
+        stride = 1 if no_initial_downscaling else 2
         self.first_bottom_up = nn.Sequential(
-            nn.Conv2d(color_ch, n_filters, 5, padding=2, stride=2),
+            nn.Conv2d(color_ch, n_filters, 5, padding=2, stride=stride),
             nonlin(),
             BottomUpDeterministicResBlock(
                 c_in=n_filters,
@@ -126,7 +131,9 @@ class LadderVAE(BaseGenerativeModel):
             )
 
         # Final top-down layer
-        modules = [Interpolate(scale=2)]
+        modules = list()
+        if not no_initial_downscaling:
+            modules.append(Interpolate(scale=2))
         for i in range(blocks_per_layer):
             modules.append(
                 TopDownDeterministicResBlock(
@@ -354,7 +361,7 @@ class LadderVAE(BaseGenerativeModel):
                          gradient_steps=0, lr=3e-3,
                          ):
 
-        best_log_p = -1e10
+        best_log_p = torch.tensor(-1e10)
         best_z = None
 
         # Generate from prior
