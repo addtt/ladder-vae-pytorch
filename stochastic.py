@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.distributions import kl_divergence
 from torch.distributions.normal import Normal
 
 
@@ -19,7 +20,8 @@ class NormalStochasticBlock2d(nn.Module):
         self.conv_out = nn.Conv2d(c_vars, c_out, kernel, padding=pad)
 
     def forward(self, p_params, q_params=None, forced_latent=None,
-                use_mode=False, force_constant_output=False):
+                use_mode=False, force_constant_output=False,
+                analytical_kl=False):
 
         assert (forced_latent is None) or (not use_mode)
 
@@ -65,8 +67,11 @@ class NormalStochasticBlock2d(nn.Module):
             q = Normal(q_mu, (q_lv / 2).exp())
             logprob_q = q.log_prob(z).sum((1, 2, 3))
 
-            # Compute KL estimate (expectation by sampling)
-            kl_elementwise = kl_normal_mc(z, p_params, q_params)
+            # Compute KL (analytical or MC estimate)
+            if analytical_kl:
+                kl_elementwise = kl_divergence(q, p)
+            else:
+                kl_elementwise = kl_normal_mc(z, p_params, q_params)
             kl_samplewise = kl_elementwise.sum((1, 2, 3))
 
             # Compute spatial KL analytically (but conditioned on samples from

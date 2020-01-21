@@ -54,6 +54,7 @@ class LVAEExperiment(VIExperimentManager):
             likelihood_form=args.likelihood,
             gated=args.gated,
             no_initial_downscaling=args.no_initial_downscaling,
+            analytical_kl=args.analytical_kl,
         ).to(self.device)
 
         # Weight initialization
@@ -238,6 +239,11 @@ class LVAEExperiment(VIExperimentManager):
                             metavar='N',
                             dest='free_bits',
                             help='free bits (nats)')
+
+        parser.add_argument('--analytical-kl',
+                            action='store_true',
+                            dest='analytical_kl',
+                            help='use analytical KL')
 
         parser.add_argument('--no-initial-downscaling',
                             action='store_true',

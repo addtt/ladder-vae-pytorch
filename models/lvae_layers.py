@@ -28,8 +28,8 @@ class TopDownLayer(nn.Module):
     def __init__(self, z_dim, n_res_blocks, n_filters, is_top_layer=False,
                  downsampling_steps=None, nonlin=None, merge_type=None,
                  batchnorm=True, dropout=None, stochastic_skip=False,
-                 res_block_type=None, gated=None,
-                 learn_top_prior=False, top_prior_param_shape=None):
+                 res_block_type=None, gated=None, learn_top_prior=False,
+                 top_prior_param_shape=None, analytical_kl=False):
 
         super().__init__()
 
@@ -37,6 +37,7 @@ class TopDownLayer(nn.Module):
         self.z_dim = z_dim
         self.stochastic_skip = stochastic_skip
         self.learn_top_prior = learn_top_prior
+        self.analytical_kl = analytical_kl
 
         # Define top layer prior parameters, possibly learnable
         if is_top_layer:
@@ -75,7 +76,7 @@ class TopDownLayer(nn.Module):
             n_filters,
             z_dim,
             n_filters,
-            transform_p_params=(not is_top_layer)
+            transform_p_params=(not is_top_layer),
         )
 
         if not is_top_layer:
@@ -143,6 +144,7 @@ class TopDownLayer(nn.Module):
             forced_latent=forced_latent,
             use_mode=use_mode,
             force_constant_output=force_constant_output,
+            analytical_kl=self.analytical_kl,
         )
 
         # Skip connection from previous layer

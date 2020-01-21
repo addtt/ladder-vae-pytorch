@@ -22,7 +22,7 @@ class LadderVAE(BaseGenerativeModel):
                  stochastic_skip=False, n_filters=32, dropout=None,
                  free_bits=0.0, learn_top_prior=False, img_shape=None,
                  likelihood_form=None, res_block_type=None, gated=False,
-                 no_initial_downscaling=False):
+                 no_initial_downscaling=False, analytical_kl=False):
         super().__init__()
         self.color_ch = color_ch
         self.z_dims = z_dims
@@ -127,6 +127,7 @@ class LadderVAE(BaseGenerativeModel):
                     top_prior_param_shape=self.get_top_prior_param_shape(),
                     res_block_type=res_block_type,
                     gated=gated,
+                    analytical_kl=analytical_kl,
                 )
             )
 
