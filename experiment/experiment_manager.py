@@ -294,17 +294,17 @@ class LVAEExperiment(VIExperimentManager):
         if args.skip_connections:
             s += ',skip'
         if args.gated:
-            s += ',gated'
+            s += ',gate'
         s += ',block=' + args.residual_type
         if args.beta_anneal != 0:
             s += ',b{}'.format(args.beta_anneal)
         s += ',{}'.format(args.nonlin)
         if args.free_bits > 0:
-            s += ',freebits={}'.format(args.free_bits)
+            s += ',freeb={}'.format(args.free_bits)
         if args.dropout is not None:
-            s += ',dropout={}'.format(args.dropout)
+            s += ',drop={}'.format(args.dropout)
         if args.learn_top_prior:
-            s += ',learnprior'
+            s += ',learnp'
         if args.weight_decay > 0.0:
             s += ',wd={}'.format(args.weight_decay)
         s += ',seed{}'.format(args.seed)
