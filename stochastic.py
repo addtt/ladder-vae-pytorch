@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torch import nn
 from torch.distributions.normal import Normal
@@ -48,21 +47,32 @@ class NormalStochasticBlock2d(nn.Module):
             z = z[0:1].expand_as(z).clone()
             p_params = p_params[0:1].expand_as(p_params).clone()
 
+        # Output of stochastic layer
         out = self.conv_out(z)
 
-        kl_elementwise = kl_samplewise = None
+        kl_elementwise = kl_samplewise = kl_spatial_analytical = None
         logprob_q = None
-        m, lv = p_params.chunk(2, dim=1)
-        # p = Normal(m, (lv / 2).exp())
-        # logprob_p = p.log_prob(z)
-        logprob_p = -0.5 * (np.log(2 * np.pi) + lv + (z - m)**2 / lv.exp())
-        logprob_p = logprob_p.sum((1, 2, 3))
+
+        # Compute log p(z)
+        p_mu, p_lv = p_params.chunk(2, dim=1)
+        p = Normal(p_mu, (p_lv / 2).exp())
+        logprob_p = p.log_prob(z).sum((1, 2, 3))
+
         if q_params is not None:
-            m, lv = q_params.chunk(2, dim=1)
-            q = Normal(m, (lv / 2).exp())
+
+            # Compute log q(z)
+            q_mu, q_lv = q_params.chunk(2, dim=1)
+            q = Normal(q_mu, (q_lv / 2).exp())
             logprob_q = q.log_prob(z).sum((1, 2, 3))
+
+            # Compute KL estimate (expectation by sampling)
             kl_elementwise = kl_normal_mc(z, p_params, q_params)
             kl_samplewise = kl_elementwise.sum((1, 2, 3))
+
+            # Compute spatial KL analytically (but conditioned on samples from
+            # previous layers)
+            kl_spatial_analytical = -0.5 * (1 + q_lv - q_mu.pow(2) - q_lv.exp())
+            kl_spatial_analytical = kl_spatial_analytical.sum(1)
 
         data = {
             'z': z,
@@ -72,6 +82,7 @@ class NormalStochasticBlock2d(nn.Module):
             'logprob_q': logprob_q,
             'kl_elementwise': kl_elementwise,
             'kl_samplewise': kl_samplewise,
+            'kl_spatial': kl_spatial_analytical,
         }
         return out, data
 

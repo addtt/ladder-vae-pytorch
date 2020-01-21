@@ -159,6 +159,7 @@ class TopDownLayer(nn.Module):
         aux_out = {
             'z': aux['z'],
             'kl': aux['kl_samplewise'],
+            'kl_spatial': aux['kl_spatial'],  # (B, H, W)
             'logprob_p': aux['logprob_p'],
             'logprob_q': aux['logprob_q'],
         }

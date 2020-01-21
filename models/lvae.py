@@ -168,7 +168,7 @@ class LadderVAE(BaseGenerativeModel):
         bu_values = self.bottomup_pass(x_pad)
 
         # Top-down inference/generation
-        out, z, kl, logp = self.topdown_pass(bu_values)
+        out, z, kl, kl_spatial, logp = self.topdown_pass(bu_values)
 
         # Restore original image size
         out = crop_img_tensor(out, img_size)
@@ -191,6 +191,7 @@ class LadderVAE(BaseGenerativeModel):
             'kl': kl,
             'kl_sep': kl_sep,
             'kl_avg_layerwise': kl_avg_layerwise,
+            'kl_spatial': kl_spatial,
             'kl_loss': kl_loss,
             'logp': logp,
             'out_mean': likelihood_info['mean'],
@@ -247,6 +248,9 @@ class LadderVAE(BaseGenerativeModel):
         # KL divergence of each layer
         kl = [None] * self.n_layers
 
+        # Spatial map of KL divergence for each layer
+        kl_spatial = [None] * self.n_layers
+
         if forced_latent is None:
             forced_latent = [None] * self.n_layers
 
@@ -257,9 +261,6 @@ class LadderVAE(BaseGenerativeModel):
         out = out_pre_residual = None
         for i in reversed(range(self.n_layers)):
 
-            # if out is not None:
-            #     print('LAYER', i, 'input', out.min().item(), out.max().item())
-
             # If available, get deterministic node from bottom-up inference
             try:
                 bu_value = bu_values[i]
@@ -269,9 +270,6 @@ class LadderVAE(BaseGenerativeModel):
             # Whether the current layer should be sampled from the mode
             use_mode = i in mode_layers
             constant_out = i in constant_layers
-
-            # if i < self.n_layers - 1:
-            #     n_img_prior = None
 
             # Input for skip connection
             skip_input = out  # TODO or out_pre_residual? or both?
@@ -289,12 +287,13 @@ class LadderVAE(BaseGenerativeModel):
             )
             z[i] = aux['z']
             kl[i] = aux['kl']
+            kl_spatial[i] = aux['kl_spatial']
             logprob_p += aux['logprob_p'].mean()  # mean over batch
 
         # Final top-down layer
         out = self.final_top_down(out)
 
-        return out, z, kl, logprob_p
+        return out, z, kl, kl_spatial, logprob_p
 
 
     def pad_input(self, x):
@@ -336,7 +335,7 @@ class LadderVAE(BaseGenerativeModel):
     def sample_prior(self, n_imgs, mode_layers=None, constant_layers=None):
 
         # Generate from prior
-        out, z, _, logp = self.topdown_pass(
+        out, z, _, _, logp = self.topdown_pass(
             n_img_prior=n_imgs,
             mode_layers=mode_layers,
             constant_layers=constant_layers
@@ -360,7 +359,7 @@ class LadderVAE(BaseGenerativeModel):
 
         # Generate from prior
         for i in range(init_attempts):
-            out, z, _, logp = self.topdown_pass(
+            out, z, _, _, logp = self.topdown_pass(
                 n_img_prior=n_imgs,
                 mode_layers=[],
                 constant_layers=constant_layers
@@ -382,7 +381,7 @@ class LadderVAE(BaseGenerativeModel):
             opt = torch.optim.Adam(params, lr=lr)
             with torch.enable_grad():
                 for i in range(gradient_steps):
-                    out, _, _, logp = self.topdown_pass(
+                    out, _, _, _, logp = self.topdown_pass(
                         n_img_prior=n_imgs,
                         # layers_from_mode=[],
                         # constant_layers=constant_layers,
