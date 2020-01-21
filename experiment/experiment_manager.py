@@ -291,6 +291,7 @@ class LVAEExperiment(VIExperimentManager):
         # s += ',z=' + str(args.z_dims).replace(" ", "")
         # s += ',dwn=' + str(args.downsample).replace(" ", "")
         s += ',{}bpl'.format(args.blocks_per_layer)
+        s += ',{}ch'.format(args.n_filters)
         if args.skip_connections:
             s += ',skip'
         if args.gated:
