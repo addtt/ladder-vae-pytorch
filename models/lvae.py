@@ -189,7 +189,7 @@ class LadderVAE(BaseGenerativeModel):
 
         kl_sep = kl.sum(1)
         kl_avg_layerwise = kl.mean(0)
-        kl_loss = self.get_free_bits_kl(kl).sum(1).mean(0)
+        kl_loss = self.get_free_bits_kl(kl).sum()  # average over layers
         kl = kl_sep.mean()
 
         data = {
@@ -354,6 +354,7 @@ class LadderVAE(BaseGenerativeModel):
 
         return likelihood_data['sample']
 
+
     # TODO quick prototype, bad code
     def new_sample_prior(self, n_imgs,
                          constant_layers=None, optimized_layers=None,
@@ -412,6 +413,7 @@ class LadderVAE(BaseGenerativeModel):
 
         return likelihood_data['sample']
 
+
     def get_top_prior_param_shape(self, n_imgs=1):
         # TODO num channels depends on random variable we're using
         dwnsc = self.overall_downscale_factor
@@ -422,9 +424,23 @@ class LadderVAE(BaseGenerativeModel):
         top_layer_shape = (n_imgs, c, h, w)
         return top_layer_shape
 
-    def get_free_bits_kl(self, kl):
-        # Input shape: (batch size, layers)
-        # For now we have layerwise bits for each sample, NOT avg over minibatch
-        if self.free_bits > 1e-4:
-            return kl.clamp(min=self.free_bits)
-        return kl
+
+    def get_free_bits_kl(self, kl, batch_average=False):
+        """
+        Takes in the KL with shape (batch size, layers), returns the KL with
+        free bits (for optimization) with shape (layers,), which is the average
+        free-bits KL per layer in the current batch.
+
+        By default, compute layerwise free bits for each sample, NOT averaging
+        over the batch dimension.
+        :param kl:
+        :param batch_average:
+        :return:
+        """
+
+        assert kl.dim() == 2
+        if self.free_bits < 1e-4:
+            return kl.mean(0)
+        if batch_average:
+            return kl.mean(0).clamp(min=self.free_bits)
+        return kl.clamp(min=self.free_bits).mean(0)
