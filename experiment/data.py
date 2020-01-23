@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import CIFAR10, SVHN, CelebA
 
-from datasets import StaticBinaryMnist
+from lib.datasets import StaticBinaryMnist
 
 
 multiobject_paths = {

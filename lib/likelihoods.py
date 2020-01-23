@@ -2,14 +2,12 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from stochastic import normal_rsample, logistic_rsample, sample_from_discretized_mix_logistic
+from .stochastic import normal_rsample, logistic_rsample, sample_from_discretized_mix_logistic
 
-sns.set()
 
 class LikelihoodModule(nn.Module):
 
@@ -440,6 +438,9 @@ def _input_check(x, mean, scale_param, reduce):
 
 
 if __name__ == '__main__':
+
+    import seaborn as sns
+    sns.set()
 
     # *** Test discretized logistic likelihood and plot examples
 

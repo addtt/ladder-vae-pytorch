@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 
-from nn import ResidualBlock, ResidualGatedBlock
-from stochastic import NormalStochasticBlock2d
+from lib.nn import ResidualBlock, ResidualGatedBlock
+from lib.stochastic import NormalStochasticBlock2d
 
 
 class TopDownLayer(nn.Module):
