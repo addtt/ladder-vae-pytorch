@@ -190,7 +190,7 @@ class LadderVAE(BaseGenerativeModel):
 
         kl_sep = kl.sum(1)
         kl_avg_layerwise = kl.mean(0)
-        kl_loss = self.get_free_bits_kl(kl).sum()  # average over layers
+        kl_loss = self.get_free_bits_kl(kl).sum()  # sum over layers
         kl = kl_sep.mean()
 
         data = {
@@ -432,11 +432,11 @@ class LadderVAE(BaseGenerativeModel):
         free bits (for optimization) with shape (layers,), which is the average
         free-bits KL per layer in the current batch.
 
-        By default, compute layerwise free bits for each sample, NOT averaging
-        over the batch dimension.
-        :param kl:
-        :param batch_average:
-        :return:
+        If batch_average is False (default), the free bits are per layer and
+        per batch element. Otherwise, the free bits are still per layer, but
+        are assigned on average to the whole batch. In both cases, the batch
+        average is returned, so it's simply a matter of doing mean(clamp(KL))
+        or clamp(mean(KL)).
         """
 
         assert kl.dim() == 2
