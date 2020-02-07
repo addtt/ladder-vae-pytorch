@@ -38,6 +38,8 @@ Log likelihood bounds on the test set. Final results coming soon.
 | binarized MNIST      | 12         | 80.50        | 78.50         | 78.30          |
 | multi-dSprites (0-2) | 12         | 26.9         | 23.2          |     |
 | SVHN                 | 15         | 4012 (1.88)  | 3973 (1.87)   |     |
+| CIFAR10              | 3          | 7651 (3.59)  | 7591 (3.56)   |     |
+| CIFAR10              | 6          | 7321 (3.44)  | 7268 (3.41)   |     |
 | CIFAR10              | 15         | 7128 (3.35)  | 7068 (3.32)   |     |
 | CelebA               | 20         | 20026 (2.35) | 19913 (2.34)  |     |
 
