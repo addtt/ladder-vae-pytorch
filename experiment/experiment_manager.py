@@ -321,7 +321,7 @@ class LVAEExperiment(VIExperimentManager):
 
 
 
-    def forward_pass(self, model, x, y=None):
+    def forward_pass(self, x, y=None):
         """
         Simple single-pass model evaluation. It consists of a forward pass
         and computation of all necessary losses and metrics.
@@ -329,7 +329,7 @@ class LVAEExperiment(VIExperimentManager):
 
         # Forward pass
         x = x.to(self.device, non_blocking=True)
-        model_out = model(x)
+        model_out = self.model(x)
         recons_sep = -model_out['ll']
         kl_sep = model_out['kl_sep']
         kl = model_out['kl']
@@ -342,13 +342,13 @@ class LVAEExperiment(VIExperimentManager):
         # Loss with beta
         beta = 1.
         if self.args.beta_anneal != 0:
-            beta = linear_anneal(model.global_step, 0.0, 1.0, self.args.beta_anneal)
+            beta = linear_anneal(self.model.global_step, 0.0, 1.0, self.args.beta_anneal)
         recons = recons_sep.mean()
         loss = recons + kl_loss * beta
 
         # L2
         l2 = 0.0
-        for p in model.parameters():
+        for p in self.model.parameters():
             l2 = l2 + torch.sum(p ** 2)
         l2 = l2.sqrt()
 
@@ -458,7 +458,7 @@ class LVAEExperiment(VIExperimentManager):
             msg = ("{} data points required, but given batch has size {}. "
                    "Please use a larger batch.".format(n_img, x.shape[0]))
             raise RuntimeError(msg)
-        outputs = self.forward_pass(self.model, x)
+        outputs = self.forward_pass(x)
         x = x.to(self.device)
         imgs = torch.stack([
             x[:n_img],
