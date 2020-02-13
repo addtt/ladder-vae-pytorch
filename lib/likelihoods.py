@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch import nn
+from torch.distributions import Normal
 from torch.nn import functional as F
 
-from .stochastic import normal_rsample, logistic_rsample, sample_from_discretized_mix_logistic
+from .stochastic import logistic_rsample, sample_from_discretized_mix_logistic
 
 
 class LikelihoodModule(nn.Module):
@@ -105,11 +106,8 @@ class GaussianLikelihood(LikelihoodModule):
 
     @staticmethod
     def sample(params):
-        sample = normal_rsample((
-            params['mean'],
-            params['logvar']
-        ))
-        return sample
+        p = Normal(params['mean'], (params['logvar'] / 2).exp())
+        return p.rsample()
 
     def log_likelihood(self, x, params):
         logprob = log_normal(

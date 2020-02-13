@@ -73,9 +73,9 @@ class TopDownLayer(nn.Module):
 
         # Define stochastic block with 2d convolutions
         self.stochastic = NormalStochasticBlock2d(
-            n_filters,
-            z_dim,
-            n_filters,
+            c_in=n_filters,
+            c_vars=z_dim,
+            c_out=n_filters,
             transform_p_params=(not is_top_layer),
         )
 
@@ -138,7 +138,7 @@ class TopDownLayer(nn.Module):
 
         # Sample from either q(z_i | z_{i+1}, x) or p(z_i | z_{i+1})
         # depending on whether q_params is None
-        x, aux = self.stochastic(
+        x, data_stoch = self.stochastic(
             p_params=p_params,
             q_params=q_params,
             forced_latent=forced_latent,
@@ -158,14 +158,9 @@ class TopDownLayer(nn.Module):
         # Last top-down block (sequence of residual blocks)
         x = self.deterministic_block(x)
 
-        aux_out = {
-            'z': aux['z'],
-            'kl': aux['kl_samplewise'],
-            'kl_spatial': aux['kl_spatial'],  # (B, H, W)
-            'logprob_p': aux['logprob_p'],
-            'logprob_q': aux['logprob_q'],
-        }
-        return x, x_pre_residual, aux_out
+        keys = ['z', 'kl_samplewise', 'kl_spatial', 'logprob_p', 'logprob_q']
+        data = {k: data_stoch[k] for k in keys}
+        return x, x_pre_residual, data
 
 
 class BottomUpLayer(nn.Module):

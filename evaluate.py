@@ -15,8 +15,7 @@ from torchvision.utils import save_image
 
 from experiment.experiment_manager import LVAEExperiment
 
-default_run = "200120_111817_multi_dsprites_binary_rgb,2ly,1bpl," \
-              "block=bacdbacd,elu,dropout=0.2,seed54321,TEST"
+default_run = ""
 
 def main():
     eval_args = parse_args()
@@ -76,7 +75,7 @@ def main():
         experiment.print_test_log(summaries)
 
 
-def inspect_layer_repr(model, img_folder, n=8, mode=2):
+def inspect_layer_repr(model, img_folder, n=8):
     for i in range(model.n_layers):
 
         print('layer', i)
@@ -85,35 +84,18 @@ def inspect_layer_repr(model, img_folder, n=8, mode=2):
         constant_layers = range(i + 1, model.n_layers)
 
         # Sample top layers once, then take many samples of a middle layer,
-        # then optimize all downstream z's to maximize p(z) if gradient_steps>0
-        if mode == 1:
-            sample = []
-            for r in range(n):
-                sample.append(
-                    model.new_sample_prior(
-                        n,
-                        constant_layers=constant_layers,
-                        optimized_layers=mode_layers,
-                        gradient_steps=0))
-            sample = torch.cat(sample)
-            pad_value = img_grid_pad_value(sample)
-            fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
-            save_image(sample, fname, nrow=n, pad_value=pad_value)
-
-        # Sample top layers once, then take many samples of a middle layer,
         # then sample from the mode in all downstream layers.
-        elif mode == 2:
-            sample = []
-            for r in range(n):
-                sample.append(
-                    model.sample_prior(
-                        n,
-                        mode_layers=mode_layers,
-                        constant_layers=constant_layers))
-            sample = torch.cat(sample)
-            pad_value = img_grid_pad_value(sample)
-            fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
-            save_image(sample, fname, nrow=n, pad_value=pad_value)
+        sample = []
+        for r in range(n):
+            sample.append(
+                model.sample_prior(
+                    n,
+                    mode_layers=mode_layers,
+                    constant_layers=constant_layers))
+        sample = torch.cat(sample)
+        pad_value = img_grid_pad_value(sample)
+        fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
+        save_image(sample, fname, nrow=n, pad_value=pad_value)
 
 
 def parse_args():

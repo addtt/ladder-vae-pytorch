@@ -209,7 +209,7 @@ torch 1.4.0
 torchvision 0.5.0
 matplotlib 3.1.2
 seaborn 0.9.0
-boilr 0.5.1
+boilr 0.5.6
 multiobject 0.0.3
 ```
 

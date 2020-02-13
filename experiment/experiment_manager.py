@@ -411,14 +411,11 @@ class LVAEExperiment(VIExperimentManager):
             'elbo/kl': results['kl'].item(),
             'l2/l2': results['l2'].item(),
         }
-        try:
+        if 'kl_avg_layerwise' in results:
             for i in range(len(results['kl_avg_layerwise'])):
                 key = 'kl_layers/kl_layer_{}'.format(i)
                 metrics_dict[key] = results['kl_avg_layerwise'][i].item()
-        except (AttributeError, KeyError):
-            pass
         return metrics_dict
-
 
 
     def additional_testing(self, img_folder):
@@ -452,18 +449,19 @@ class LVAEExperiment(VIExperimentManager):
             self.save_input_and_recons(x, fname, n)
 
 
-    def save_input_and_recons(self, x, fname, n):
-        n_img = n ** 2 // 2
+    def save_input_and_recons(self, x, fname, ncol):
+        n_img = ncol ** 2 // 2
         if x.shape[0] < n_img:
             msg = ("{} data points required, but given batch has size {}. "
                    "Please use a larger batch.".format(n_img, x.shape[0]))
             raise RuntimeError(msg)
-        outputs = self.forward_pass(x)
         x = x.to(self.device)
+        outputs = self.forward_pass(x)
+        nrow = ncol
         imgs = torch.stack([
             x[:n_img],
             outputs['out_sample'][:n_img]])
         imgs = imgs.permute(1, 0, 2, 3, 4)
-        imgs = imgs.reshape(n ** 2, x.size(1), x.size(2), x.size(3))
+        imgs = imgs.reshape(ncol * nrow, x.size(1), x.size(2), x.size(3))
         pad_value = img_grid_pad_value(imgs)
-        save_image(imgs.cpu(), fname, nrow=n, pad_value=pad_value)
+        save_image(imgs.cpu(), fname, nrow=nrow, pad_value=pad_value)

@@ -5,6 +5,12 @@ from torch.distributions.normal import Normal
 
 
 class NormalStochasticBlock2d(nn.Module):
+    """
+    Transform input parameters to q(z) with a convolution, optionally do the
+    same for p(z), then sample z ~ q(z) and return conv(z).
+
+    If q's parameters are not given, do the same but sample from p(z).
+    """
     def __init__(self, c_in, c_vars, c_out, kernel=3, transform_p_params=True):
         super().__init__()
         assert kernel % 2 == 1
@@ -30,21 +36,33 @@ class NormalStochasticBlock2d(nn.Module):
         else:
             assert p_params.size(1) == 2 * self.c_vars
 
-        if q_params is not None:
-            q_params = self.conv_in_q(q_params)
-            mu_lv = q_params
-        else:
-            mu_lv = p_params
+        # Define p(z)
+        p_mu, p_lv = p_params.chunk(2, dim=1)
+        p = Normal(p_mu, (p_lv / 2).exp())
 
+        if q_params is not None:
+            # Define q(z)
+            q_params = self.conv_in_q(q_params)
+            q_mu, q_lv = q_params.chunk(2, dim=1)
+            q = Normal(q_mu, (q_lv / 2).exp())
+
+            # Sample from q(z)
+            sampling_distrib = q
+        else:
+            # Sample from p(z)
+            sampling_distrib = p
+
+        # Generate latent variable (typically by sampling)
         if forced_latent is None:
             if use_mode:
-                z = torch.chunk(mu_lv, 2, dim=1)[0]
+                z = sampling_distrib.mean
             else:
-                z = normal_rsample(mu_lv)
+                z = sampling_distrib.rsample()
         else:
             z = forced_latent
 
-        # Copy one sample (and distrib parameters) over the whole batch
+        # Copy one sample (and distrib parameters) over the whole batch.
+        # This is used when doing experiment from the prior - q is not used.
         if force_constant_output:
             z = z[0:1].expand_as(z).clone()
             p_params = p_params[0:1].expand_as(p_params).clone()
@@ -52,61 +70,41 @@ class NormalStochasticBlock2d(nn.Module):
         # Output of stochastic layer
         out = self.conv_out(z)
 
-        kl_elementwise = kl_samplewise = kl_spatial_analytical = None
-        logprob_q = None
-
         # Compute log p(z)
-        p_mu, p_lv = p_params.chunk(2, dim=1)
-        p = Normal(p_mu, (p_lv / 2).exp())
         logprob_p = p.log_prob(z).sum((1, 2, 3))
 
         if q_params is not None:
 
             # Compute log q(z)
-            q_mu, q_lv = q_params.chunk(2, dim=1)
-            q = Normal(q_mu, (q_lv / 2).exp())
             logprob_q = q.log_prob(z).sum((1, 2, 3))
 
             # Compute KL (analytical or MC estimate)
+            kl_analytical = kl_divergence(q, p)
             if analytical_kl:
-                kl_elementwise = kl_divergence(q, p)
+                kl_elementwise = kl_analytical
             else:
                 kl_elementwise = kl_normal_mc(z, p_params, q_params)
             kl_samplewise = kl_elementwise.sum((1, 2, 3))
 
             # Compute spatial KL analytically (but conditioned on samples from
             # previous layers)
-            kl_spatial_analytical = -0.5 * (1 + q_lv - q_mu.pow(2) - q_lv.exp())
-            kl_spatial_analytical = kl_spatial_analytical.sum(1)
+            kl_spatial_analytical = kl_analytical.sum(1)
+
+        else:
+            kl_elementwise = kl_samplewise = kl_spatial_analytical = None
+            logprob_q = None
 
         data = {
-            'z': z,
-            'p_params': p_params,
-            'q_params': q_params,
-            'logprob_p': logprob_p,
-            'logprob_q': logprob_q,
-            'kl_elementwise': kl_elementwise,
-            'kl_samplewise': kl_samplewise,
-            'kl_spatial': kl_spatial_analytical,
+            'z': z,     # sampled variable at this layer (batch, ch, h, w)
+            'p_params': p_params,  # (b, ch, h, w) where b is 1 or batch size
+            'q_params': q_params,  # (batch, ch, h, w)
+            'logprob_p': logprob_p,   # (batch, )
+            'logprob_q': logprob_q,   # (batch, )
+            'kl_elementwise': kl_elementwise,  # (batch, ch, h, w)
+            'kl_samplewise': kl_samplewise,    # (batch, )
+            'kl_spatial': kl_spatial_analytical,  # (batch, h, w)
         }
         return out, data
-
-
-def normal_rsample(mu_lv):
-    """
-    Returns a sample from Normal with specified mean and log variance.
-    :param mu_lv: a tensor containing mean and log variance along dim=1,
-            or a tuple (mean, log variance)
-    :return: a reparameterized sample with the same size as the input
-            mean and log variance
-    """
-    try:
-        mu, lv = torch.chunk(mu_lv, 2, dim=1)
-    except TypeError:
-        mu, lv = mu_lv
-    eps = torch.randn_like(mu)
-    std = (lv / 2).exp()
-    return eps * std + mu
 
 
 def logistic_rsample(mu_ls):

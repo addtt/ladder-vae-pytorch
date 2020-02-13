@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from boilr import BaseGenerativeModel
-from boilr.nn import crop_img_tensor, pad_img_tensor, Interpolate
+from boilr.nn import crop_img_tensor, pad_img_tensor, Interpolate, free_bits_kl
 from torch import nn
 
 from lib.likelihoods import (
@@ -174,7 +174,7 @@ class LadderVAE(BaseGenerativeModel):
         bu_values = self.bottomup_pass(x_pad)
 
         # Top-down inference/generation
-        out, z, kl, kl_spatial, logp = self.topdown_pass(bu_values)
+        out, td_data = self.topdown_pass(bu_values)
 
         # Restore original image size
         out = crop_img_tensor(out, img_size)
@@ -184,29 +184,28 @@ class LadderVAE(BaseGenerativeModel):
 
         # kl[i] for each i has length batch_size
         # resulting kl shape: (batch_size, layers)
-        kl = torch.cat([kl_layer.unsqueeze(1) for kl_layer in kl], dim=1)
+        kl = torch.cat([kl_layer.unsqueeze(1) for kl_layer in td_data['kl']], dim=1)
 
         kl_sep = kl.sum(1)
         kl_avg_layerwise = kl.mean(0)
-        kl_loss = self.get_free_bits_kl(kl).sum()  # sum over layers
+        kl_loss = free_bits_kl(kl, self.free_bits).sum()  # sum over layers
         kl = kl_sep.mean()
 
-        data = {
+        output = {
             'll': ll,
-            'z': z,
+            'z': td_data['z'],
             'kl': kl,
             'kl_sep': kl_sep,
             'kl_avg_layerwise': kl_avg_layerwise,
-            'kl_spatial': kl_spatial,
+            'kl_spatial': td_data['kl_spatial'],
             'kl_loss': kl_loss,
-            'logp': logp,
+            'logp': td_data['logprob_p'],
             'out_mean': likelihood_info['mean'],
             'out_mode': likelihood_info['mode'],
             'out_sample': likelihood_info['sample'],
             'likelihood_params': likelihood_info['params']
         }
-
-        return data
+        return output
 
 
     def bottomup_pass(self, x):
@@ -291,15 +290,21 @@ class LadderVAE(BaseGenerativeModel):
                 force_constant_output=constant_out,
                 forced_latent=forced_latent[i],
             )
-            z[i] = aux['z']
-            kl[i] = aux['kl']
-            kl_spatial[i] = aux['kl_spatial']
+            z[i] = aux['z']  # sampled variable at this layer (batch, ch, h, w)
+            kl[i] = aux['kl_samplewise']   # (batch, )
+            kl_spatial[i] = aux['kl_spatial']  # (batch, h, w)
             logprob_p += aux['logprob_p'].mean()  # mean over batch
 
         # Final top-down layer
         out = self.final_top_down(out)
 
-        return out, z, kl, kl_spatial, logprob_p
+        data = {
+            'z': z,  # list of tensors with shape (batch, ch[i], h[i], w[i])
+            'kl': kl,  # list of tensors with shape (batch, )
+            'kl_spatial': kl_spatial,  # list of tensors w shape (batch, h[i], w[i])
+            'logprob_p': logprob_p,  # scalar, mean over batch
+        }
+        return out, data
 
 
     def pad_input(self, x):
@@ -341,70 +346,11 @@ class LadderVAE(BaseGenerativeModel):
     def sample_prior(self, n_imgs, mode_layers=None, constant_layers=None):
 
         # Generate from prior
-        out, z, _, _, logp = self.topdown_pass(
+        out, _ = self.topdown_pass(
             n_img_prior=n_imgs,
             mode_layers=mode_layers,
             constant_layers=constant_layers
         )
-        out = crop_img_tensor(out, self.img_shape)
-
-        # Log likelihood and other info (per data point)
-        _, likelihood_data = self.likelihood(out, None)
-
-        return likelihood_data['sample']
-
-
-    # TODO quick prototype, bad code
-    def new_sample_prior(self, n_imgs,
-                         constant_layers=None, optimized_layers=None,
-                         mode_layers=None, init_attempts=20,
-                         gradient_steps=0, lr=3e-3,
-                         ):
-
-        best_log_p = torch.tensor(-1e10)
-        best_z = None
-
-        # Generate from prior
-        for i in range(init_attempts):
-            out, z, _, _, logp = self.topdown_pass(
-                n_img_prior=n_imgs,
-                mode_layers=[],
-                constant_layers=constant_layers
-            )
-            if logp > best_log_p:
-                best_log_p = logp
-                best_z = z
-        logp = best_log_p
-        z = best_z
-
-        print("init logp:", logp.item())
-
-        params = []
-        for i in optimized_layers:
-            z[i].requires_grad_(True)
-            params.append(z[i])
-
-        if len(params) > 0:
-            opt = torch.optim.Adam(params, lr=lr)
-            with torch.enable_grad():
-                for i in range(gradient_steps):
-                    out, _, _, _, logp = self.topdown_pass(
-                        n_img_prior=n_imgs,
-                        # layers_from_mode=[],
-                        # constant_layers=constant_layers,
-                        forced_latent=z
-                    )
-                    loss = -logp
-
-                    opt.zero_grad()
-                    loss.backward()
-                    opt.step()
-
-                    if (i+1) % 500 == 0:
-                        print('  log p', logp.item())
-
-        print('  log p(z) =', logp.item())
-
         out = crop_img_tensor(out, self.img_shape)
 
         # Log likelihood and other info (per data point)
@@ -422,24 +368,3 @@ class LadderVAE(BaseGenerativeModel):
         c = self.z_dims[-1] * 2  # mu and logvar
         top_layer_shape = (n_imgs, c, h, w)
         return top_layer_shape
-
-
-    def get_free_bits_kl(self, kl, batch_average=False):
-        """
-        Takes in the KL with shape (batch size, layers), returns the KL with
-        free bits (for optimization) with shape (layers,), which is the average
-        free-bits KL per layer in the current batch.
-
-        If batch_average is False (default), the free bits are per layer and
-        per batch element. Otherwise, the free bits are still per layer, but
-        are assigned on average to the whole batch. In both cases, the batch
-        average is returned, so it's simply a matter of doing mean(clamp(KL))
-        or clamp(mean(KL)).
-        """
-
-        assert kl.dim() == 2
-        if self.free_bits < 1e-4:
-            return kl.mean(0)
-        if batch_average:
-            return kl.mean(0).clamp(min=self.free_bits)
-        return kl.clamp(min=self.free_bits).mean(0)
