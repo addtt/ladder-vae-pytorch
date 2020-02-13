@@ -156,11 +156,9 @@ class LadderVAE(BaseGenerativeModel):
             self.likelihood = GaussianLikelihood(n_filters, color_ch)
         elif likelihood_form == 'discr_log':
             self.likelihood = DiscretizedLogisticLikelihood(
-                n_filters, color_ch, 256, double=False)  # TODO double?
+                n_filters, color_ch, 256)
         elif likelihood_form == 'discr_log_mix':
-            self.likelihood = DiscretizedLogisticMixLikelihood(
-                n_filters, n_components=10
-            )
+            self.likelihood = DiscretizedLogisticMixLikelihood(n_filters)
         else:
             msg = "Unrecognized likelihood '{}'".format(likelihood_form)
             raise RuntimeError(msg)
