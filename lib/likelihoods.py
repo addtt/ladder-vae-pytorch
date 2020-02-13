@@ -208,9 +208,7 @@ class DiscretizedLogisticMixLikelihood(LikelihoodModule):
     Color channels for now is fixed to 3 and n_bins to 256.
     """
 
-    log_scale_bias = -1.
-
-    def __init__(self, ch_in, n_components=5):
+    def __init__(self, ch_in, n_components=10):
         super().__init__()
         self.parameter_net = nn.Conv2d(
             ch_in,
