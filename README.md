@@ -18,7 +18,7 @@ rather than only on _the_ layer above (see for example [2])
 
 ```
 pip install -r requirements.txt
-CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 32 32 32 32 32 32 32 32 32 --downsample 0 0 1 0 0 1 0 0 0 1 0 0 --nonlin elu --skip --blocks-per-layer 4 --gated --test-batch-size 2000 --freebits 1.0 --learn-top-prior --data-dep-init --seed 42 --dataset static_mnist
+CUDA_VISIBLE_DEVICES=0 python main.py --zdims 32 32 32 --downsample 1 1 1 --nonlin elu --skip --blocks-per-layer 4 --gated --freebits 0.5 --learn-top-prior --data-dep-init --seed 42 --dataset static_mnist
 ```
 
 Dependencies include [boilr](https://github.com/addtt/boiler-pytorch) (a framework 
@@ -209,7 +209,7 @@ torch 1.4.0
 torchvision 0.5.0
 matplotlib 3.1.2
 seaborn 0.9.0
-boilr 0.5.6
+boilr 0.6.0
 multiobject 0.0.3
 ```
 
