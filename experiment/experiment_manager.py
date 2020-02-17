@@ -4,7 +4,8 @@ import os
 import torch
 from boilr import VIExperimentManager
 from boilr.nn_init import data_dependent_init
-from boilr.utils import linear_anneal, img_grid_pad_value
+from boilr.utils import linear_anneal
+from boilr.viz import img_grid_pad_value
 from torch import optim
 from torchvision.utils import save_image
 

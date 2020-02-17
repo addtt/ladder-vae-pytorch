@@ -10,7 +10,8 @@ from os import path
 
 import torch
 import torch.utils.data
-from boilr.utils import set_rnd_seed, get_date_str, img_grid_pad_value
+from boilr.utils import set_rnd_seed, get_date_str
+from boilr.viz import img_grid_pad_value
 from torchvision.utils import save_image
 
 from experiment.experiment_manager import LVAEExperiment

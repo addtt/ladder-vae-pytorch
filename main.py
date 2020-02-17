@@ -13,7 +13,7 @@ def _check_version(pkg, pkg_str, version):
         msg = msg.format(pkg_str, version, pkg.__version_info__)
         warnings.warn(msg)
 
-BOILR_VERSION = (0, 5, 6)
+BOILR_VERSION = (0, 6, 0)
 MULTIOBJ_VERSION = (0, 0, 3)
 _check_version(boilr, 'boilr', BOILR_VERSION)
 _check_version(multiobject, 'multiobject', MULTIOBJ_VERSION)
