@@ -1,16 +1,19 @@
 import argparse
 import os
 
+import boilr
 import torch
 from boilr import VIExperimentManager
-from boilr.nn_init import data_dependent_init
+from boilr.nn.init import data_dependent_init
 from boilr.utils import linear_anneal
-from boilr.viz import img_grid_pad_value
+from boilr.utils.viz import img_grid_pad_value
 from torch import optim
 from torchvision.utils import save_image
 
 from models.lvae import LadderVAE
 from .data import DatasetLoader
+
+boilr.set_options(model_print_depth=2)
 
 
 class LVAEExperiment(VIExperimentManager):
@@ -80,7 +83,7 @@ class LVAEExperiment(VIExperimentManager):
         return optimizer
 
 
-    def _parse_args(self):
+    def _parse_args(self, parser):
         """
         Parse command-line arguments defining experiment settings.
 
@@ -112,14 +115,15 @@ class LVAEExperiment(VIExperimentManager):
                                batch_size=64,
                                test_batch_size=1000,
                                lr=3e-4,
-                               log_interval=10000,
-                               test_log_interval=10000,
-                               checkpoint_interval=100000,
+                               train_log_every=10000,
+                               test_log_every=10000,
+                               checkpoint_every=100000,
+                               keep_checkpoint_max=2,
                                resume="",
 
                                # VI-specific
-                               ll_every=50000,
-                               loglik_samples=100,)
+                               loglikelihood_every=50000,
+                               loglikelihood_samples=100,)
 
         parser.add_argument('-d', '--dataset',
                             type=str,
@@ -371,8 +375,8 @@ class LVAEExperiment(VIExperimentManager):
         return output
 
 
-    @staticmethod
-    def print_train_log(step, epoch, summaries):
+    @classmethod
+    def train_log_str(cls, summaries, step, epoch=None):
         s = "       [step {}]   loss: {:.5g}   ELBO: {:.5g}   recons: {:.3g}   KL: {:.3g}"
         s = s.format(
             step,
@@ -380,15 +384,15 @@ class LVAEExperiment(VIExperimentManager):
             summaries['elbo/elbo'],
             summaries['elbo/recons'],
             summaries['elbo/kl'])
-        print(s)
+        return s
 
 
-    @staticmethod
-    def print_test_log(summaries, step=None, epoch=None):
-        log_string = "       "
+    @classmethod
+    def test_log_str(cls, summaries, step, epoch=None):
+        s = "       "
         if epoch is not None:
-            log_string += "[step {}, epoch {}]   ".format(step, epoch)
-        log_string += "ELBO {:.5g}   recons: {:.3g}   KL: {:.3g}".format(
+            s += "[step {}, epoch {}]   ".format(step, epoch)
+        s += "ELBO {:.5g}   recons: {:.3g}   KL: {:.3g}".format(
             summaries['elbo/elbo'], summaries['elbo/recons'], summaries['elbo/kl'])
         ll_key = None
         for k in summaries.keys():
@@ -397,14 +401,14 @@ class LVAEExperiment(VIExperimentManager):
                 iw_samples = k.split('_')[-1]
                 break
         if ll_key is not None:
-            log_string += "   marginal log-likelihood ({}) {:.5g}".format(
+            s += "   marginal log-likelihood ({}) {:.5g}".format(
                 iw_samples, summaries[ll_key])
 
-        print(log_string)
+        return s
 
 
-    @staticmethod
-    def get_metrics_dict(results):
+    @classmethod
+    def get_metrics_dict(cls, results):
         metrics_dict = {
             'loss/loss': results['loss'].item(),
             'elbo/elbo': results['elbo'].item(),
@@ -419,7 +423,7 @@ class LVAEExperiment(VIExperimentManager):
         return metrics_dict
 
 
-    def additional_testing(self, img_folder):
+    def save_images(self, img_folder):
         """
         Perform additional testing, including possibly generating images.
 

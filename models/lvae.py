@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from boilr import BaseGenerativeModel
+from boilr.models import BaseGenerativeModel
 from boilr.nn import crop_img_tensor, pad_img_tensor, Interpolate, free_bits_kl
 from torch import nn
 
