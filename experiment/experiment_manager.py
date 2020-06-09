@@ -34,11 +34,11 @@ class LVAEExperiment(VIExperimentManager):
     """
 
 
-    def make_datamanager(self):
+    def _make_datamanager(self):
         cuda = self.device.type == 'cuda'
         return DatasetLoader(self.args, cuda)
 
-    def make_model(self):
+    def _make_model(self):
         args = self.args
         model = LadderVAE(
             self.dataloaders.color_ch,
@@ -270,7 +270,6 @@ class LVAEExperiment(VIExperimentManager):
         if args.dropout < 1e-5:
             args.dropout = None
         assert args.free_bits >= 0.0
-        assert args.loglik_interval % args.test_log_interval == 0
         args.batch_norm = not args.no_batch_norm
 
         likelihood_map = {
