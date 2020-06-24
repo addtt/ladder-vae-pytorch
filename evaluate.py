@@ -8,78 +8,104 @@ import pickle
 import warnings
 from os import path
 
+import matplotlib.pyplot as plt
 import torch
 import torch.utils.data
+from boilr.eval import BaseOfflineEvaluator
 from boilr.utils import set_rnd_seed, get_date_str
-from boilr.viz import img_grid_pad_value
+from boilr.utils.viz import img_grid_pad_value
 from torchvision.utils import save_image
 
 from experiment.experiment_manager import LVAEExperiment
 
-default_run = ""
 
-def main():
-    eval_args = parse_args()
+class Evaluator(BaseOfflineEvaluator):
 
-    set_rnd_seed(eval_args.seed)
-    use_cuda = not eval_args.no_cuda and torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-    date_str = get_date_str()
-    print('device: {}, start time: {}'.format(device, date_str))
+    def run(self):
 
-    # Get path to load model
-    checkpoint_folder = path.join('checkpoints', eval_args.load)
+        torch.set_grad_enabled(False)
 
-    # Add date string and create folder on evaluation_results
-    result_folder = path.join('evaluation_results', date_str + '_' + eval_args.load)
-    img_folder = os.path.join(result_folder, 'imgs')
-    os.makedirs(result_folder)
-    os.makedirs(img_folder)
-
-    # Load config
-    config_path = path.join(checkpoint_folder, 'config.pkl')
-    with open(config_path, 'rb') as file:
-        args = pickle.load(file)
-
-    # Modify config for testing
-    args.test_batch_size = eval_args.test_batch_size
-    args.dry_run = False
-
-    experiment = LVAEExperiment(args=args)
-    experiment.device = device
-
-    experiment.setup(checkpoint_folder)
-    model = experiment.model
-
-    with torch.no_grad():
-        model.eval()
         n = 12
 
-        # Inspect representations learned by each layer
-        if eval_args.inspect_layer_repr:
-            inspect_layer_repr(model, img_folder, n=8)
+        e = self._experiment
+        e.model.eval()
 
-        # Prior samples
-        for i in range(eval_args.prior_samples):
-            sample = model.sample_prior(n ** 2)
-            pad_value = img_grid_pad_value(sample)
-            fname = os.path.join(img_folder, 'sample_' + str(i) + '.png')
-            save_image(sample, fname, nrow=n, pad_value=pad_value)
+        # Run evaluation and print results
+        results = e.test_procedure(iw_samples=self.args.ll_samples)
+        print("Eval results:\n{}".format(results))
+
+        # Save samples
+        for i in range(self.args.prior_samples):
+            fname = os.path.join(self._img_folder, "samples_{}.png".format(i))
+            e.generate_and_save_samples(fname, nrows=n)
 
         # Save input and reconstructions
-        fname = os.path.join(img_folder, 'reconstruction.png')
-        (x, _) = next(iter(experiment.dataloaders.test))
-        experiment.save_input_and_recons(x, fname, n)
+        x, y = next(iter(e.dataloaders.test))
+        fname = os.path.join(self._img_folder, "reconstructions.png")
+        e.generate_and_save_reconstructions(x, fname, nrows=n)
 
-        # Test procedure (with specified number of iw samples)
-        summaries = experiment.test_procedure(iw_samples=eval_args.iw_samples)
-        experiment.print_test_log(summaries)
+        # Inspect representations learned by each layer
+        if self.args.inspect_layer_repr:
+            inspect_layer_repr(e.model, self._img_folder, n=n)
+
+    # @classmethod
+    # def _define_args_defaults(cls) -> dict:
+    #     defaults = super(Evaluator, cls)._define_args_defaults()
+    #     return defaults
+
+    def _add_args(self, parser: argparse.ArgumentParser) -> None:
+
+        super(Evaluator, self)._add_args(parser)
+
+        parser.add_argument('--ll',
+                            action='store_true',
+                            help="estimate log likelihood with importance-"
+                            "weighted bound")
+        parser.add_argument('--ll-samples',
+                            type=int,
+                            default=100,
+                            dest='ll_samples',
+                            metavar='N',
+                            help="number of importance-weighted samples for "
+                            "log likelihood estimation")
+        parser.add_argument('--ps',
+                            type=int,
+                            default=1,
+                            dest='prior_samples',
+                            metavar='N',
+                            help="number of batches of samples from prior")
+        parser.add_argument(
+            '--layer-repr',
+            action='store_true',
+            dest='inspect_layer_repr',
+            help='inspect layer representations. Generate samples '
+            'by sampling top layers once, then taking many '
+            'samples from a middle layer, and finally sample '
+            'the downstream layers from the conditional mode. '
+            'Do this for every layer.')
+
+    @classmethod
+    def _check_args(cls, args: argparse.Namespace) -> argparse.Namespace:
+        args = super(Evaluator, cls)._check_args(args)
+
+        if not args.ll:
+            args.ll_samples = 1
+        if args.load_step is not None:
+            warnings.warn(
+                "Loading weights from specific training step is not supported "
+                "for now. The model will be loaded from the last checkpoint.")
+        return args
+
+
+def main():
+    evaluator = Evaluator(experiment_class=LVAEExperiment)
+    evaluator()
 
 
 def inspect_layer_repr(model, img_folder, n=8):
     for i in range(model.n_layers):
 
-        print('layer', i)
+        # print('layer', i)
 
         mode_layers = range(i)
         constant_layers = range(i + 1, model.n_layers)
@@ -89,77 +115,13 @@ def inspect_layer_repr(model, img_folder, n=8):
         sample = []
         for r in range(n):
             sample.append(
-                model.sample_prior(
-                    n,
-                    mode_layers=mode_layers,
-                    constant_layers=constant_layers))
+                model.sample_prior(n,
+                                   mode_layers=mode_layers,
+                                   constant_layers=constant_layers))
         sample = torch.cat(sample)
         pad_value = img_grid_pad_value(sample)
         fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
         save_image(sample, fname, nrow=n, pad_value=pad_value)
-
-
-def parse_args():
-
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--load',
-                        type=str,
-                        metavar='NAME',
-                        default=default_run,
-                        help="name of the run to be loaded")
-    parser.add_argument('--ll',
-                        action='store_true',
-                        help="estimate log likelihood")
-    parser.add_argument('--nll',
-                        type=int,
-                        default=1000,
-                        dest='iw_samples',
-                        metavar='N',
-                        help="number of samples for log likelihood estimation")
-    parser.add_argument('--ps',
-                        type=int,
-                        default=1,
-                        dest='prior_samples',
-                        metavar='N',
-                        help="number of batches of samples from prior")
-    parser.add_argument('--layer-repr',
-                        action='store_true',
-                        dest='inspect_layer_repr',
-                        help='inspect layer representations. Generate samples '
-                             'by sampling top layers once, then taking many '
-                             'samples from a middle layer, and finally sample '
-                             'the downstream layers from the conditional mode. '
-                             'Do this for every layer.')
-    parser.add_argument('--test-batch-size',
-                        type=int,
-                        default=2000,
-                        dest='test_batch_size',
-                        metavar='N',
-                        help='test batch size')
-    parser.add_argument('--load-step',
-                        type=int,
-                        dest='load_step',
-                        metavar='N',
-                        help='step of checkpoint to be loaded (default: last'
-                             'available)')
-    parser.add_argument('--seed',
-                        type=int,
-                        default=42,
-                        metavar='S',
-                        help='random seed')
-    parser.add_argument('--nocuda',
-                        action='store_true',
-                        dest='no_cuda',
-                        help='do not use cuda')
-
-    args = parser.parse_args()
-    if not args.ll:
-        args.iw_samples = 1
-    if args.load_step is not None:
-        warnings.warn(
-            "Loading weights from specific training step is not supported for "
-            "now. The model will be loaded from the last checkpoint.")
-    return args
 
 
 if __name__ == "__main__":

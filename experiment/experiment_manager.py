@@ -1,14 +1,12 @@
 import argparse
-import os
 
-import boilr
+import boilr.data
 import torch
-from boilr import VIExperimentManager
+from boilr import VAEExperimentManager
 from boilr.nn.init import data_dependent_init
 from boilr.utils import linear_anneal
-from boilr.utils.viz import img_grid_pad_value
 from torch import optim
-from torchvision.utils import save_image
+from torch.optim.optimizer import Optimizer
 
 from models.lvae import LadderVAE
 from .data import DatasetLoader
@@ -16,7 +14,7 @@ from .data import DatasetLoader
 boilr.set_options(model_print_depth=2)
 
 
-class LVAEExperiment(VIExperimentManager):
+class LVAEExperiment(VAEExperimentManager):
     """
     Experiment manager.
 
@@ -33,12 +31,11 @@ class LVAEExperiment(VIExperimentManager):
     - 'optimizer': the optimizer
     """
 
-
-    def _make_datamanager(self):
+    def _make_datamanager(self) -> boilr.data.BaseDatasetManager:
         cuda = self.device.type == 'cuda'
         return DatasetLoader(self.args, cuda)
 
-    def _make_model(self):
+    def _make_model(self) -> torch.nn.Module:
         args = self.args
         model = LadderVAE(
             self.dataloaders.color_ch,
@@ -65,7 +62,10 @@ class LVAEExperiment(VIExperimentManager):
         if args.simple_data_dependent_init:
 
             # Get batch
-            t = [self.dataloaders.train.dataset[i] for i in range(args.batch_size)]
+            t = [
+                self.dataloaders.train.dataset[i]
+                for i in range(args.batch_size)
+            ]
             t = torch.stack(tuple(t[i][0] for i in range(len(t))))
 
             # Use batch for data dependent init
@@ -73,59 +73,59 @@ class LVAEExperiment(VIExperimentManager):
 
         return model
 
-    def make_optimizer(self):
+    def _make_optimizer(self) -> Optimizer:
         args = self.args
-        optimizer = optim.Adamax(
-            self.model.parameters(),
-            lr=args.lr,
-            weight_decay=args.weight_decay
-        )
+        optimizer = optim.Adamax(self.model.parameters(),
+                                 lr=args.lr,
+                                 weight_decay=args.weight_decay)
         return optimizer
 
+    @classmethod
+    def _define_args_defaults(cls) -> dict:
+        defaults = super(LVAEExperiment, cls)._define_args_defaults()
 
-    def _parse_args(self, parser):
-        """
-        Parse command-line arguments defining experiment settings.
+        # Override boilr defaults
+        defaults.update(
 
-        :return: args: argparse.Namespace with experiment settings
-        """
+            # General
+            batch_size=64,
+            test_batch_size=1000,
+            lr=3e-4,
+            train_log_every=10000,
+            test_log_every=10000,
+            checkpoint_every=100000,
+            keep_checkpoint_max=2,
+            resume="",
+
+            # VI-specific
+            loglikelihood_every=50000,
+            loglikelihood_samples=100,
+        )
+
+        return defaults
+
+    def _add_args(self, parser: argparse.ArgumentParser) -> None:
+
+        super(LVAEExperiment, self)._add_args(parser)
 
         def list_options(lst):
             if lst:
                 return "'" + "' | '".join(lst) + "'"
             return ""
 
-
         legal_merge_layers = ['linear', 'residual']
         legal_nonlin = ['relu', 'leakyrelu', 'elu', 'selu']
         legal_resblock = ['cabdcabd', 'bacdbac', 'bacdbacd']
-        legal_datasets = ['static_mnist', 'cifar10', 'celeba',
-                          'svhn', 'multi_dsprites_binary_rgb',
-                          'multi_mnist_binary']
-        legal_likelihoods = ['bernoulli', 'gaussian',
-                             'discr_log', 'discr_log_mix']
+        legal_datasets = [
+            'static_mnist', 'cifar10', 'celeba', 'svhn',
+            'multi_dsprites_binary_rgb', 'multi_mnist_binary'
+        ]
+        legal_likelihoods = [
+            'bernoulli', 'gaussian', 'discr_log', 'discr_log_mix'
+        ]
 
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            allow_abbrev=False)
-
-        self.add_required_args(parser,
-
-                               # General
-                               batch_size=64,
-                               test_batch_size=1000,
-                               lr=3e-4,
-                               train_log_every=10000,
-                               test_log_every=10000,
-                               checkpoint_every=100000,
-                               keep_checkpoint_max=2,
-                               resume="",
-
-                               # VI-specific
-                               loglikelihood_every=50000,
-                               loglikelihood_samples=100,)
-
-        parser.add_argument('-d', '--dataset',
+        parser.add_argument('-d',
+                            '--dataset',
                             type=str,
                             choices=legal_datasets,
                             default='static_mnist',
@@ -133,13 +133,14 @@ class LVAEExperiment(VIExperimentManager):
                             dest='dataset_name',
                             help="dataset: " + list_options(legal_datasets))
 
-        parser.add_argument('--likelihood',
-                            type=str,
-                            choices=legal_likelihoods,
-                            metavar='NAME',
-                            dest='likelihood',
-                            help="likelihood: {}; default depends on dataset".format(
-                                list_options(legal_likelihoods)))
+        parser.add_argument(
+            '--likelihood',
+            type=str,
+            choices=legal_likelihoods,
+            metavar='NAME',
+            dest='likelihood',
+            help="likelihood: {}; default depends on dataset".format(
+                list_options(legal_likelihoods)))
 
         parser.add_argument('--zdims',
                             nargs='+',
@@ -148,7 +149,7 @@ class LVAEExperiment(VIExperimentManager):
                             metavar='DIM',
                             dest='z_dims',
                             help='list of dimensions (number of channels) for '
-                                 'each stochastic layer')
+                            'each stochastic layer')
 
         parser.add_argument('--blocks-per-layer',
                             type=int,
@@ -178,13 +179,14 @@ class LVAEExperiment(VIExperimentManager):
                             dest='gated',
                             help='use gated layers in residual blocks')
 
-        parser.add_argument('--downsample',
-                            nargs='+',
-                            type=int,
-                            default=[1, 1, 1],
-                            metavar='N',
-                            help='list of integers, each int is the number of downsampling'
-                                 ' steps (by a factor of 2) before each stochastic layer')
+        parser.add_argument(
+            '--downsample',
+            nargs='+',
+            type=int,
+            default=[1, 1, 1],
+            metavar='N',
+            help='list of integers, each int is the number of downsampling'
+            ' steps (by a factor of 2) before each stochastic layer')
 
         parser.add_argument('--learn-top-prior',
                             action='store_true',
@@ -196,7 +198,7 @@ class LVAEExperiment(VIExperimentManager):
                             default='bacdbacd',
                             metavar='TYPE',
                             help="type of residual blocks: " +
-                                 list_options(legal_resblock))
+                            list_options(legal_resblock))
 
         parser.add_argument('--merge-layers',
                             type=str,
@@ -204,7 +206,7 @@ class LVAEExperiment(VIExperimentManager):
                             default='residual',
                             metavar='TYPE',
                             help="type of merge layers: " +
-                                 list_options(legal_merge_layers))
+                            list_options(legal_merge_layers))
 
         parser.add_argument('--beta-anneal',
                             type=int,
@@ -216,7 +218,7 @@ class LVAEExperiment(VIExperimentManager):
                             action='store_true',
                             dest='simple_data_dependent_init',
                             help='use simple data-dependent initialization to '
-                                 'normalize outputs of affine layers')
+                            'normalize outputs of affine layers')
 
         parser.add_argument('--wd',
                             type=float,
@@ -230,13 +232,14 @@ class LVAEExperiment(VIExperimentManager):
                             default='elu',
                             metavar='F',
                             help="nonlinear activation: " +
-                                 list_options(legal_nonlin))
+                            list_options(legal_nonlin))
 
-        parser.add_argument('--dropout',
-                            type=float,
-                            default=0.2,
-                            metavar='D',
-                            help='dropout probability (in deterministic layers)')
+        parser.add_argument(
+            '--dropout',
+            type=float,
+            default=0.2,
+            metavar='D',
+            help='dropout probability (in deterministic layers)')
 
         parser.add_argument('--freebits',
                             type=float,
@@ -254,15 +257,17 @@ class LVAEExperiment(VIExperimentManager):
                             action='store_true',
                             dest='no_initial_downscaling',
                             help='do not downscale as first inference step (and'
-                                 'upscale as last generation step)')
+                            'upscale as last generation step)')
 
-        args = parser.parse_args()
+    @classmethod
+    def _check_args(cls, args: argparse.Namespace) -> argparse.Namespace:
+
+        args = super(LVAEExperiment, cls)._check_args(args)
 
         if len(args.z_dims) != len(args.downsample):
-            msg = (
-                "length of list of latent dimensions ({}) does not match "
-                "length of list of downsampling factors ({})").format(
-                len(args.z_dims), len(args.downsample))
+            msg = ("length of list of latent dimensions ({}) does not match "
+                   "length of list of downsampling factors ({})").format(
+                       len(args.z_dims), len(args.downsample))
             raise RuntimeError(msg)
 
         assert args.weight_decay >= 0.0
@@ -285,16 +290,8 @@ class LVAEExperiment(VIExperimentManager):
 
         return args
 
-
     @staticmethod
-    def _make_run_description(args):
-        """
-        Create a string description of the run. It is used in the names of the
-        logging folders.
-
-        :param args: experiment config
-        :return: the run description
-        """
+    def _make_run_description(args: argparse.Namespace) -> str:
         s = ''
         s += args.dataset_name
         s += ',{}ly'.format(len(args.z_dims))
@@ -323,8 +320,6 @@ class LVAEExperiment(VIExperimentManager):
             s += ',' + args.additional_descr
         return s
 
-
-
     def forward_pass(self, x, y=None):
         """
         Simple single-pass model evaluation. It consists of a forward pass
@@ -340,20 +335,21 @@ class LVAEExperiment(VIExperimentManager):
         kl_loss = model_out['kl_loss']
 
         # ELBO
-        elbo_sep = - (recons_sep + kl_sep)
+        elbo_sep = -(recons_sep + kl_sep)
         elbo = elbo_sep.mean()
 
         # Loss with beta
         beta = 1.
         if self.args.beta_anneal != 0:
-            beta = linear_anneal(self.model.global_step, 0.0, 1.0, self.args.beta_anneal)
+            beta = linear_anneal(self.model.global_step, 0.0, 1.0,
+                                 self.args.beta_anneal)
         recons = recons_sep.mean()
         loss = recons + kl_loss * beta
 
         # L2
         l2 = 0.0
         for p in self.model.parameters():
-            l2 = l2 + torch.sum(p ** 2)
+            l2 = l2 + torch.sum(p**2)
         l2 = l2.sqrt()
 
         output = {
@@ -373,18 +369,12 @@ class LVAEExperiment(VIExperimentManager):
 
         return output
 
-
     @classmethod
     def train_log_str(cls, summaries, step, epoch=None):
         s = "       [step {}]   loss: {:.5g}   ELBO: {:.5g}   recons: {:.3g}   KL: {:.3g}"
-        s = s.format(
-            step,
-            summaries['loss/loss'],
-            summaries['elbo/elbo'],
-            summaries['elbo/recons'],
-            summaries['elbo/kl'])
+        s = s.format(step, summaries['loss/loss'], summaries['elbo/elbo'],
+                     summaries['elbo/recons'], summaries['elbo/kl'])
         return s
-
 
     @classmethod
     def test_log_str(cls, summaries, step, epoch=None):
@@ -392,7 +382,8 @@ class LVAEExperiment(VIExperimentManager):
         if epoch is not None:
             s += "[step {}, epoch {}]   ".format(step, epoch)
         s += "ELBO {:.5g}   recons: {:.3g}   KL: {:.3g}".format(
-            summaries['elbo/elbo'], summaries['elbo/recons'], summaries['elbo/kl'])
+            summaries['elbo/elbo'], summaries['elbo/recons'],
+            summaries['elbo/kl'])
         ll_key = None
         for k in summaries.keys():
             if k.find('elbo_IW') > -1:
@@ -404,7 +395,6 @@ class LVAEExperiment(VIExperimentManager):
                 iw_samples, summaries[ll_key])
 
         return s
-
 
     @classmethod
     def get_metrics_dict(cls, results):
@@ -420,52 +410,3 @@ class LVAEExperiment(VIExperimentManager):
                 key = 'kl_layers/kl_layer_{}'.format(i)
                 metrics_dict[key] = results['kl_avg_layerwise'][i].item()
         return metrics_dict
-
-
-    def save_images(self, img_folder):
-        """
-        Perform additional testing, including possibly generating images.
-
-        In this case, save samples from the generative model, and pairs
-        input/reconstruction from the test set.
-
-        :param img_folder: folder to store images
-        """
-
-        step = self.model.global_step
-
-        if not self.args.dry_run:
-
-            # Saved images will have n**2 sub-images
-            n = 8
-
-            # Save model samples
-            sample = self.model.sample_prior(n ** 2)
-            pad_value = img_grid_pad_value(sample)
-            fname = os.path.join(img_folder, 'sample_' + str(step) + '.png')
-            save_image(sample, fname, nrow=n, pad_value=pad_value)
-
-            # Get first test batch
-            (x, _) = next(iter(self.dataloaders.test))
-            fname = os.path.join(img_folder, 'reconstruction_' + str(step) + '.png')
-
-            # Save model original/reconstructions
-            self.save_input_and_recons(x, fname, n)
-
-
-    def save_input_and_recons(self, x, fname, ncol):
-        n_img = ncol ** 2 // 2
-        if x.shape[0] < n_img:
-            msg = ("{} data points required, but given batch has size {}. "
-                   "Please use a larger batch.".format(n_img, x.shape[0]))
-            raise RuntimeError(msg)
-        x = x.to(self.device)
-        outputs = self.forward_pass(x)
-        nrow = ncol
-        imgs = torch.stack([
-            x[:n_img],
-            outputs['out_sample'][:n_img]])
-        imgs = imgs.permute(1, 0, 2, 3, 4)
-        imgs = imgs.reshape(ncol * nrow, x.size(1), x.size(2), x.size(3))
-        pad_value = img_grid_pad_value(imgs)
-        save_image(imgs.cpu(), fname, nrow=nrow, pad_value=pad_value)
