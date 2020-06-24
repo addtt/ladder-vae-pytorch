@@ -7,7 +7,7 @@ from boilr.nn.init import data_dependent_init
 from boilr.utils import linear_anneal
 from torch import optim
 from torch.optim.optimizer import Optimizer
-
+from typing import Optional
 from models.lvae import LadderVAE
 from .data import DatasetLoader
 
@@ -319,11 +319,9 @@ class LVAEExperiment(VAEExperimentManager):
             s += ',' + args.additional_descr
         return s
 
-    def forward_pass(self, x, y=None):
-        """
-        Simple single-pass model evaluation. It consists of a forward pass
-        and computation of all necessary losses and metrics.
-        """
+    def forward_pass(self,
+                     x: torch.Tensor,
+                     y: Optional[torch.Tensor] = None) -> dict:
 
         # Forward pass
         x = x.to(self.device, non_blocking=True)
@@ -369,14 +367,20 @@ class LVAEExperiment(VAEExperimentManager):
         return output
 
     @classmethod
-    def train_log_str(cls, summaries, step, epoch=None):
+    def train_log_str(cls,
+                      summaries: dict,
+                      step: int,
+                      epoch: Optional[int] = None) -> str:
         s = "       [step {}]   loss: {:.5g}   ELBO: {:.5g}   recons: {:.3g}   KL: {:.3g}"
         s = s.format(step, summaries['loss/loss'], summaries['elbo/elbo'],
                      summaries['elbo/recons'], summaries['elbo/kl'])
         return s
 
     @classmethod
-    def test_log_str(cls, summaries, step, epoch=None):
+    def test_log_str(cls,
+                     summaries: dict,
+                     step: int,
+                     epoch: Optional[int] = None) -> str:
         s = "       "
         if epoch is not None:
             s += "[step {}, epoch {}]   ".format(step, epoch)
@@ -396,7 +400,7 @@ class LVAEExperiment(VAEExperimentManager):
         return s
 
     @classmethod
-    def get_metrics_dict(cls, results):
+    def get_metrics_dict(cls, results: dict) -> dict:
         metrics_dict = {
             'loss/loss': results['loss'].item(),
             'elbo/elbo': results['elbo'].item(),
