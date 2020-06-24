@@ -4,25 +4,35 @@ from boilr.models import BaseGenerativeModel
 from boilr.nn import crop_img_tensor, pad_img_tensor, Interpolate, free_bits_kl
 from torch import nn
 
-from lib.likelihoods import (
-    BernoulliLikelihood,
-    GaussianLikelihood,
-    DiscretizedLogisticLikelihood,
-    DiscretizedLogisticMixLikelihood)
-from .lvae_layers import (
-    TopDownLayer,
-    BottomUpLayer,
-    TopDownDeterministicResBlock,
-    BottomUpDeterministicResBlock)
+from lib.likelihoods import (BernoulliLikelihood, GaussianLikelihood,
+                             DiscretizedLogisticLikelihood,
+                             DiscretizedLogisticMixLikelihood)
+from .lvae_layers import (TopDownLayer, BottomUpLayer,
+                          TopDownDeterministicResBlock,
+                          BottomUpDeterministicResBlock)
 
 
 class LadderVAE(BaseGenerativeModel):
-    def __init__(self, color_ch, z_dims, blocks_per_layer=2, downsample=None,
-                 nonlin='elu', merge_type=None, batchnorm=True,
-                 stochastic_skip=False, n_filters=32, dropout=None,
-                 free_bits=0.0, learn_top_prior=False, img_shape=None,
-                 likelihood_form=None, res_block_type=None, gated=False,
-                 no_initial_downscaling=False, analytical_kl=False):
+
+    def __init__(self,
+                 color_ch,
+                 z_dims,
+                 blocks_per_layer=2,
+                 downsample=None,
+                 nonlin='elu',
+                 merge_type=None,
+                 batchnorm=True,
+                 stochastic_skip=False,
+                 n_filters=32,
+                 dropout=None,
+                 free_bits=0.0,
+                 learn_top_prior=False,
+                 img_shape=None,
+                 likelihood_form=None,
+                 res_block_type=None,
+                 gated=False,
+                 no_initial_downscaling=False,
+                 analytical_kl=False):
         super().__init__()
         self.color_ch = color_ch
         self.z_dims = z_dims
@@ -44,7 +54,7 @@ class LadderVAE(BaseGenerativeModel):
 
         # Downsample by a factor of 2 at each downsampling operation
         self.overall_downscale_factor = np.power(2, sum(self.downsample))
-        if not no_initial_downscaling:   # by default do another downscaling
+        if not no_initial_downscaling:  # by default do another downscaling
             self.overall_downscale_factor *= 2
 
         assert max(self.downsample) <= self.blocks_per_layer
@@ -71,8 +81,7 @@ class LadderVAE(BaseGenerativeModel):
                 batchnorm=batchnorm,
                 dropout=dropout,
                 res_block_type=res_block_type,
-            )
-        )
+            ))
 
         # Init lists of layers
         self.top_down_layers = nn.ModuleList([])
@@ -96,8 +105,7 @@ class LadderVAE(BaseGenerativeModel):
                     dropout=dropout,
                     res_block_type=res_block_type,
                     gated=gated,
-                )
-            )
+                ))
 
             # Add top-down stochastic layer at level i.
             # The architecture when doing inference is roughly as follows:
@@ -128,8 +136,7 @@ class LadderVAE(BaseGenerativeModel):
                     res_block_type=res_block_type,
                     gated=gated,
                     analytical_kl=analytical_kl,
-                )
-            )
+                ))
 
         # Final top-down layer
         modules = list()
@@ -145,8 +152,7 @@ class LadderVAE(BaseGenerativeModel):
                     dropout=dropout,
                     res_block_type=res_block_type,
                     gated=gated,
-                )
-            )
+                ))
         self.final_top_down = nn.Sequential(*modules)
 
         # Define likelihood
@@ -162,7 +168,6 @@ class LadderVAE(BaseGenerativeModel):
         else:
             msg = "Unrecognized likelihood '{}'".format(likelihood_form)
             raise RuntimeError(msg)
-
 
     def forward(self, x):
         img_size = x.size()[2:]
@@ -184,7 +189,8 @@ class LadderVAE(BaseGenerativeModel):
 
         # kl[i] for each i has length batch_size
         # resulting kl shape: (batch_size, layers)
-        kl = torch.cat([kl_layer.unsqueeze(1) for kl_layer in td_data['kl']], dim=1)
+        kl = torch.cat([kl_layer.unsqueeze(1) for kl_layer in td_data['kl']],
+                       dim=1)
 
         kl_sep = kl.sum(1)
         kl_avg_layerwise = kl.mean(0)
@@ -207,7 +213,6 @@ class LadderVAE(BaseGenerativeModel):
         }
         return output
 
-
     def bottomup_pass(self, x):
         # Bottom-up initial layer
         x = self.first_bottom_up(x)
@@ -221,9 +226,11 @@ class LadderVAE(BaseGenerativeModel):
 
         return bu_values
 
-
-    def topdown_pass(self, bu_values=None, n_img_prior=None,
-                     mode_layers=None, constant_layers=None,
+    def topdown_pass(self,
+                     bu_values=None,
+                     n_img_prior=None,
+                     mode_layers=None,
+                     constant_layers=None,
                      forced_latent=None):
 
         # Default: no layer is sampled from the distribution's mode
@@ -291,7 +298,7 @@ class LadderVAE(BaseGenerativeModel):
                 forced_latent=forced_latent[i],
             )
             z[i] = aux['z']  # sampled variable at this layer (batch, ch, h, w)
-            kl[i] = aux['kl_samplewise']   # (batch, )
+            kl[i] = aux['kl_samplewise']  # (batch, )
             kl_spatial[i] = aux['kl_spatial']  # (batch, h, w)
             logprob_p += aux['logprob_p'].mean()  # mean over batch
 
@@ -301,11 +308,11 @@ class LadderVAE(BaseGenerativeModel):
         data = {
             'z': z,  # list of tensors with shape (batch, ch[i], h[i], w[i])
             'kl': kl,  # list of tensors with shape (batch, )
-            'kl_spatial': kl_spatial,  # list of tensors w shape (batch, h[i], w[i])
+            'kl_spatial':
+                kl_spatial,  # list of tensors w shape (batch, h[i], w[i])
             'logprob_p': logprob_p,  # scalar, mean over batch
         }
         return out, data
-
 
     def pad_input(self, x):
         """
@@ -316,7 +323,6 @@ class LadderVAE(BaseGenerativeModel):
         size = self.get_padded_size(x.size())
         x = pad_img_tensor(x, size)
         return x
-
 
     def get_padded_size(self, size):
         """
@@ -342,22 +348,18 @@ class LadderVAE(BaseGenerativeModel):
 
         return padded_size
 
-
     def sample_prior(self, n_imgs, mode_layers=None, constant_layers=None):
 
         # Generate from prior
-        out, _ = self.topdown_pass(
-            n_img_prior=n_imgs,
-            mode_layers=mode_layers,
-            constant_layers=constant_layers
-        )
+        out, _ = self.topdown_pass(n_img_prior=n_imgs,
+                                   mode_layers=mode_layers,
+                                   constant_layers=constant_layers)
         out = crop_img_tensor(out, self.img_shape)
 
         # Log likelihood and other info (per data point)
         _, likelihood_data = self.likelihood(out, None)
 
         return likelihood_data['sample']
-
 
     def get_top_prior_param_shape(self, n_imgs=1):
         # TODO num channels depends on random variable we're using

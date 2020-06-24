@@ -23,15 +23,23 @@ class ResidualBlock(nn.Module):
 
     default_kernel_size = (3, 3)
 
-    def __init__(self, channels, nonlin, kernel=None, groups=1,
-                 batchnorm=True, block_type=None, dropout=None, gated=None):
+    def __init__(self,
+                 channels,
+                 nonlin,
+                 kernel=None,
+                 groups=1,
+                 batchnorm=True,
+                 block_type=None,
+                 dropout=None,
+                 gated=None):
         super().__init__()
         if kernel is None:
             kernel = self.default_kernel_size
         elif isinstance(kernel, int):
             kernel = (kernel, kernel)
         elif len(kernel) != 2:
-            raise ValueError("kernel has to be None, int, or an iterable of length 2")
+            raise ValueError(
+                "kernel has to be None, int, or an iterable of length 2")
         assert all([k % 2 == 1 for k in kernel]), "kernel sizes have to be odd"
         kernel = list(kernel)
         pad = [k // 2 for k in kernel]
@@ -41,8 +49,11 @@ class ResidualBlock(nn.Module):
 
         if block_type == 'cabdcabd':
             for i in range(2):
-                conv = nn.Conv2d(channels, channels, kernel[i],
-                                 padding=pad[i], groups=groups)
+                conv = nn.Conv2d(channels,
+                                 channels,
+                                 kernel[i],
+                                 padding=pad[i],
+                                 groups=groups)
                 modules.append(conv)
                 modules.append(nonlin())
                 if batchnorm:
@@ -55,20 +66,25 @@ class ResidualBlock(nn.Module):
                 if batchnorm:
                     modules.append(nn.BatchNorm2d(channels))
                 modules.append(nonlin())
-                conv = nn.Conv2d(channels, channels, kernel[i],
-                                 padding=pad[i], groups=groups)
+                conv = nn.Conv2d(channels,
+                                 channels,
+                                 kernel[i],
+                                 padding=pad[i],
+                                 groups=groups)
                 modules.append(conv)
                 if dropout is not None and i == 0:
                     modules.append(nn.Dropout2d(dropout))
-
 
         elif block_type == 'bacdbacd':
             for i in range(2):
                 if batchnorm:
                     modules.append(nn.BatchNorm2d(channels))
                 modules.append(nonlin())
-                conv = nn.Conv2d(channels, channels, kernel[i],
-                                 padding=pad[i], groups=groups)
+                conv = nn.Conv2d(channels,
+                                 channels,
+                                 kernel[i],
+                                 padding=pad[i],
+                                 groups=groups)
                 modules.append(conv)
                 modules.append(nn.Dropout2d(dropout))
 
@@ -84,6 +100,7 @@ class ResidualBlock(nn.Module):
 
 
 class ResidualGatedBlock(ResidualBlock):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, gated=True)
 
@@ -104,6 +121,6 @@ class GateLayer2d(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         x, gate = torch.chunk(x, 2, dim=1)
-        x = self.nonlin(x)   # TODO remove this?
+        x = self.nonlin(x)  # TODO remove this?
         gate = torch.sigmoid(gate)
         return x * gate

@@ -11,15 +11,15 @@ class StaticBinaryMnist(TensorDataset):
     def __init__(self, folder, train, download=False, shuffle_init=False):
         self.download = download
         if train:
-            x = np.concatenate([
+            sets = [
                 self._get_binarized_mnist(folder, shuffle_init, split='train'),
                 self._get_binarized_mnist(folder, shuffle_init, split='valid')
-            ], axis=0)
+            ]
+            x = np.concatenate(sets, axis=0)
         else:
             x = self._get_binarized_mnist(folder, shuffle_init, split='test')
         labels = torch.zeros(len(x),).fill_(float('nan'))
         super().__init__(torch.from_numpy(x), labels)
-
 
     def _get_binarized_mnist(self, folder, shuffle_init, split=None):
         """
@@ -56,9 +56,12 @@ class StaticBinaryMnist(TensorDataset):
                     lines = f.readlines()
 
                 os.remove(path_mat)
-                lines = np.array([[int(i) for i in line.split()] for line in lines])
-                data[subdataset] = lines.astype('float32').reshape((-1, 1, 28, 28))
-                np.savez_compressed(path_mat.split(".amat")[0], data=data[subdataset])
+                lines = np.array(
+                    [[int(i) for i in line.split()] for line in lines])
+                data[subdataset] = lines.astype('float32').reshape(
+                    (-1, 1, 28, 28))
+                np.savez_compressed(path_mat.split(".amat")[0],
+                                    data=data[subdataset])
 
         else:
             data[split] = np.load(path)['data']

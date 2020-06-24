@@ -11,6 +11,7 @@ class NormalStochasticBlock2d(nn.Module):
 
     If q's parameters are not given, do the same but sample from p(z).
     """
+
     def __init__(self, c_in, c_vars, c_out, kernel=3, transform_p_params=True):
         super().__init__()
         assert kernel % 2 == 1
@@ -25,8 +26,12 @@ class NormalStochasticBlock2d(nn.Module):
         self.conv_in_q = nn.Conv2d(c_in, 2 * c_vars, kernel, padding=pad)
         self.conv_out = nn.Conv2d(c_vars, c_out, kernel, padding=pad)
 
-    def forward(self, p_params, q_params=None, forced_latent=None,
-                use_mode=False, force_constant_output=False,
+    def forward(self,
+                p_params,
+                q_params=None,
+                forced_latent=None,
+                use_mode=False,
+                force_constant_output=False,
                 analytical_kl=False):
 
         assert (forced_latent is None) or (not use_mode)
@@ -95,13 +100,13 @@ class NormalStochasticBlock2d(nn.Module):
             logprob_q = None
 
         data = {
-            'z': z,     # sampled variable at this layer (batch, ch, h, w)
+            'z': z,  # sampled variable at this layer (batch, ch, h, w)
             'p_params': p_params,  # (b, ch, h, w) where b is 1 or batch size
             'q_params': q_params,  # (batch, ch, h, w)
-            'logprob_p': logprob_p,   # (batch, )
-            'logprob_q': logprob_q,   # (batch, )
+            'logprob_p': logprob_p,  # (batch, )
+            'logprob_q': logprob_q,  # (batch, )
             'kl_elementwise': kl_elementwise,  # (batch, ch, h, w)
-            'kl_samplewise': kl_samplewise,    # (batch, )
+            'kl_samplewise': kl_samplewise,  # (batch, )
             'kl_spatial': kl_spatial_analytical,  # (batch, h, w)
         }
         return out, data
@@ -145,7 +150,6 @@ def sample_from_discretized_mix_logistic(l):
         one_hot.scatter_(len(tensor.size()), tensor.unsqueeze(-1), 1.)
         return one_hot
 
-
     # Pytorch ordering
     l = l.permute(0, 2, 3, 1)
     ls = [int(y) for y in l.size()]
@@ -159,33 +163,44 @@ def sample_from_discretized_mix_logistic(l):
     l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])
     # sample mixture indicator from softmax
     temp = torch.FloatTensor(logit_probs.size())
-    if l.is_cuda: temp = temp.cuda()
+    if l.is_cuda:
+        temp = temp.cuda()
     temp.uniform_(1e-5, 1. - 1e-5)
-    temp = logit_probs.data - torch.log(- torch.log(temp))
+    temp = logit_probs.data - torch.log(-torch.log(temp))
     _, argmax = temp.max(dim=3)
 
     one_hot = to_one_hot(argmax, nr_mix)
     sel = one_hot.view(xs[:-1] + [1, nr_mix])
     # select logistic parameters
     means = torch.sum(l[:, :, :, :, :nr_mix] * sel, dim=4)
-    log_scales = torch.clamp(torch.sum(
-        l[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
-    coeffs = torch.sum(torch.tanh(
-        l[:, :, :, :, 2 * nr_mix:3 * nr_mix]) * sel, dim=4)
+    log_scales = torch.clamp(torch.sum(l[:, :, :, :, nr_mix:2 * nr_mix] * sel,
+                                       dim=4),
+                             min=-7.)
+    coeffs = torch.sum(torch.tanh(l[:, :, :, :, 2 * nr_mix:3 * nr_mix]) * sel,
+                       dim=4)
     # sample from logistic & clip to interval
     # we don't actually round to the nearest 8bit value when sampling
     u = torch.FloatTensor(means.size())
-    if l.is_cuda: u = u.cuda()
+    if l.is_cuda:
+        u = u.cuda()
     u.uniform_(1e-5, 1. - 1e-5)
     u = nn.Parameter(u)
     x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
     x0 = torch.clamp(torch.clamp(x[:, :, :, 0], min=-1.), max=1.)
-    x1 = torch.clamp(torch.clamp(
-        x[:, :, :, 1] + coeffs[:, :, :, 0] * x0, min=-1.), max=1.)
-    x2 = torch.clamp(torch.clamp(
-        x[:, :, :, 2] + coeffs[:, :, :, 1] * x0 + coeffs[:, :, :, 2] * x1, min=-1.), max=1.)
+    x1 = torch.clamp(torch.clamp(x[:, :, :, 1] + coeffs[:, :, :, 0] * x0,
+                                 min=-1.),
+                     max=1.)
+    x2 = torch.clamp(torch.clamp(x[:, :, :, 2] + coeffs[:, :, :, 1] * x0 +
+                                 coeffs[:, :, :, 2] * x1,
+                                 min=-1.),
+                     max=1.)
 
-    out = torch.cat([x0.view(xs[:-1] + [1]), x1.view(xs[:-1] + [1]), x2.view(xs[:-1] + [1])], dim=3)
+    out = torch.cat([
+        x0.view(xs[:-1] + [1]),
+        x1.view(xs[:-1] + [1]),
+        x2.view(xs[:-1] + [1])
+    ],
+                    dim=3)
     # put back in Pytorch ordering
     out = out.permute(0, 3, 1, 2)
     return out

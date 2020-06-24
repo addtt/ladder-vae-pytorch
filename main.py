@@ -8,5 +8,6 @@ def main():
     trainer = Trainer(experiment)
     trainer.run()
 
+
 if __name__ == "__main__":
     main()

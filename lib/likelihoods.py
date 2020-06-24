@@ -49,13 +49,13 @@ class LikelihoodModule(nn.Module):
 
 
 class BernoulliLikelihood(LikelihoodModule):
+
     def __init__(self, ch_in, color_channels):
         super().__init__()
-        self.parameter_net = nn.Conv2d(
-            ch_in,
-            color_channels,
-            kernel_size=3,
-            padding=1)
+        self.parameter_net = nn.Conv2d(ch_in,
+                                       color_channels,
+                                       kernel_size=3,
+                                       padding=1)
 
     def distr_params(self, x):
         x = self.parameter_net(x)
@@ -79,13 +79,13 @@ class BernoulliLikelihood(LikelihoodModule):
 
 
 class GaussianLikelihood(LikelihoodModule):
+
     def __init__(self, ch_in, color_channels):
         super().__init__()
-        self.parameter_net = nn.Conv2d(
-            ch_in,
-            2 * color_channels,
-            kernel_size=3,
-            padding=1)
+        self.parameter_net = nn.Conv2d(ch_in,
+                                       2 * color_channels,
+                                       kernel_size=3,
+                                       padding=1)
 
     def distr_params(self, x):
         x = self.parameter_net(x)
@@ -110,14 +110,8 @@ class GaussianLikelihood(LikelihoodModule):
         return p.rsample()
 
     def log_likelihood(self, x, params):
-        logprob = log_normal(
-            x,
-            params['mean'],
-            params['logvar'],
-            reduce='none'
-        )
+        logprob = log_normal(x, params['mean'], params['logvar'], reduce='none')
         return logprob
-
 
 
 class DiscretizedLogisticLikelihood(LikelihoodModule):
@@ -138,18 +132,17 @@ class DiscretizedLogisticLikelihood(LikelihoodModule):
         super().__init__()
         self.n_bins = n_bins
         self.double_precision = double
-        self.parameter_net = nn.Conv2d(
-            ch_in,
-            2 * color_channels,
-            kernel_size=3,
-            padding=1)
+        self.parameter_net = nn.Conv2d(ch_in,
+                                       2 * color_channels,
+                                       kernel_size=3,
+                                       padding=1)
 
     def distr_params(self, x):
         x = self.parameter_net(x)
         mean, ls = x.chunk(2, dim=1)
         ls = ls + self.log_scale_bias
         ls = ls.clamp(min=-7.)
-        mean = mean + 0.5   # initialize to mid interval
+        mean = mean + 0.5  # initialize to mid interval
         params = {
             'mean': mean,
             'logscale': ls,
@@ -167,10 +160,7 @@ class DiscretizedLogisticLikelihood(LikelihoodModule):
     @staticmethod
     def sample(params):
         # We're not quantizing 8bit, but it doesn't matter
-        sample = logistic_rsample((
-            params['mean'],
-            params['logscale']
-        ))
+        sample = logistic_rsample((params['mean'], params['logscale']))
         sample = sample.clamp(min=0., max=1.)
         return sample
 
@@ -179,16 +169,14 @@ class DiscretizedLogisticLikelihood(LikelihoodModule):
         # bins between 0 and 1. E.g. if n_bins=256 the 257 bin edges are:
         # 0, 1/256, ..., 255/256, 1.
 
-        x = x * (255/256) + 1/512
+        x = x * (255 / 256) + 1 / 512
 
-        logprob = log_discretized_logistic(
-            x,
-            params['mean'],
-            params['logscale'],
-            n_bins=self.n_bins,
-            reduce='none',
-            double=self.double_precision
-        )
+        logprob = log_discretized_logistic(x,
+                                           params['mean'],
+                                           params['logscale'],
+                                           n_bins=self.n_bins,
+                                           reduce='none',
+                                           double=self.double_precision)
         return logprob
 
 
@@ -208,11 +196,10 @@ class DiscretizedLogisticMixLikelihood(LikelihoodModule):
 
     def __init__(self, ch_in, n_components=10):
         super().__init__()
-        self.parameter_net = nn.Conv2d(
-            ch_in,
-            10 * n_components,
-            kernel_size=3,
-            padding=1)
+        self.parameter_net = nn.Conv2d(ch_in,
+                                       10 * n_components,
+                                       kernel_size=3,
+                                       padding=1)
 
     def distr_params(self, x):
         x = self.parameter_net(x)
@@ -243,9 +230,12 @@ class DiscretizedLogisticMixLikelihood(LikelihoodModule):
         return logprob
 
 
-
-def log_discretized_logistic(x, mean, log_scale, n_bins=256,
-                             reduce='mean', double=False):
+def log_discretized_logistic(x,
+                             mean,
+                             log_scale,
+                             n_bins=256,
+                             reduce='mean',
+                             double=False):
     """
     Log of the probability mass of the values x under the logistic distribution
     with parameters mean and scale. The sum is taken over all dimensions except
@@ -285,7 +275,8 @@ def log_discretized_logistic(x, mean, log_scale, n_bins=256,
 
     cdf_plus = torch.ones_like(x)
     idx = x < (n_bins - 1) / n_bins
-    cdf_plus[idx] = torch.sigmoid((x[idx] + 1 / n_bins - mean[idx]) / scale[idx])
+    cdf_plus[idx] = torch.sigmoid(
+        (x[idx] + 1 / n_bins - mean[idx]) / scale[idx])
     cdf_minus = torch.zeros_like(x)
     idx = x >= 1 / n_bins
     cdf_minus[idx] = torch.sigmoid((x[idx] - mean[idx]) / scale[idx])
@@ -318,7 +309,8 @@ def discretized_mix_logistic_loss(x, l):
     # here and below: unpacking the params of the mixture of logistics
     nr_mix = int(ls[-1] / 10)
     logit_probs = l[:, :, :, :nr_mix]
-    l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])  # 3 for mean, scale, coef
+    l = l[:, :, :, nr_mix:].contiguous().view(
+        xs + [nr_mix * 3])  # 3 for mean, scale, coef
     means = l[:, :, :, :, :nr_mix]
     # log_scales = torch.max(l[:, :, :, :, nr_mix:2 * nr_mix], -7.)
     log_scales = torch.clamp(l[:, :, :, :, nr_mix:2 * nr_mix], min=-7.)
@@ -327,12 +319,14 @@ def discretized_mix_logistic_loss(x, l):
     # here and below: getting the means and adjusting them based on preceding
     # sub-pixels
     x = x.contiguous()
-    x = x.unsqueeze(-1) + nn.Parameter(torch.zeros(xs + [nr_mix]).to(x.device), requires_grad=False)
-    m2 = (means[:, :, :, 1, :] + coeffs[:, :, :, 0, :]
-          * x[:, :, :, 0, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
+    x = x.unsqueeze(-1) + nn.Parameter(torch.zeros(xs + [nr_mix]).to(x.device),
+                                       requires_grad=False)
+    m2 = (means[:, :, :, 1, :] + coeffs[:, :, :, 0, :] * x[:, :, :, 0, :]).view(
+        xs[0], xs[1], xs[2], 1, nr_mix)
 
     m3 = (means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :] +
-          coeffs[:, :, :, 2, :] * x[:, :, :, 1, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
+          coeffs[:, :, :, 2, :] * x[:, :, :, 1, :]).view(
+              xs[0], xs[1], xs[2], 1, nr_mix)
 
     means = torch.cat((means[:, :, :, 0, :].unsqueeze(3), m2, m3), dim=3)
     centered_x = x - means
@@ -371,13 +365,16 @@ def discretized_mix_logistic_loss(x, l):
     # the observed sub-pixel value
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
-    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (
-                1. - inner_inner_cond) * (log_pdf_mid - np.log(127.5))
+    inner_inner_out = inner_inner_cond * torch.log(
+        torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
+            log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
-    inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
+    inner_out = inner_cond * log_one_minus_cdf_min + (
+        1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
     log_probs = cond * log_cdf_plus + (1. - cond) * inner_out
-    log_probs = torch.sum(log_probs, dim=3) + torch.log_softmax(logit_probs, dim=-1)
+    log_probs = torch.sum(log_probs, dim=3) + torch.log_softmax(logit_probs,
+                                                                dim=-1)
     log_probs = torch.logsumexp(log_probs, dim=-1)
 
     # return -torch.sum(log_probs)
@@ -408,8 +405,8 @@ def log_normal(x, mean, logvar, reduce='mean'):
 
     logvar = _input_check(x, mean, logvar, reduce)
     var = torch.exp(logvar)
-    log_prob = -0.5 * (((x - mean) ** 2) / var + logvar
-                       + torch.tensor(2 * math.pi).log())
+    log_prob = -0.5 * ((
+        (x - mean)**2) / var + logvar + torch.tensor(2 * math.pi).log())
     log_prob = log_prob.sum((1, 2, 3))
     return _reduce(log_prob, reduce)
 
@@ -448,9 +445,15 @@ if __name__ == '__main__':
     plt.figure(figsize=(15, 8))
     for logscale_ in logscales:
         logscale = torch.tensor(logscale_).expand_as(t)
-        log_prob = log_discretized_logistic(
-            t, mean_, logscale, n_bins=256, reduce='none', double=True)
-        plt.plot(t.flatten().numpy(), log_prob.numpy(), label='logscale={}'.format(logscale_))
+        log_prob = log_discretized_logistic(t,
+                                            mean_,
+                                            logscale,
+                                            n_bins=256,
+                                            reduce='none',
+                                            double=True)
+        plt.plot(t.flatten().numpy(),
+                 log_prob.numpy(),
+                 label='logscale={}'.format(logscale_))
     plt.xlabel('data (x)')
     plt.ylabel('logprob')
     plt.title('log DiscrLogistic(x | 0.3, scale)')
@@ -465,9 +468,15 @@ if __name__ == '__main__':
     plt.figure(figsize=(15, 8))
     for logscale_ in logscales:
         logscale = torch.tensor(logscale_).expand_as(mean_)
-        log_prob = log_discretized_logistic(
-            t, mean_, logscale, n_bins=256, reduce='none', double=True)
-        plt.plot(mean_.flatten().numpy(), log_prob.numpy(), label='logscale={}'.format(logscale_))
+        log_prob = log_discretized_logistic(t,
+                                            mean_,
+                                            logscale,
+                                            n_bins=256,
+                                            reduce='none',
+                                            double=True)
+        plt.plot(mean_.flatten().numpy(),
+                 log_prob.numpy(),
+                 label='logscale={}'.format(logscale_))
     plt.xlabel('mean of logistic')
     plt.ylabel('logprob')
     plt.title('log DiscrLogistic(0.3 | mean, scale)')
