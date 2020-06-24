@@ -70,15 +70,14 @@ class Evaluator(BaseOfflineEvaluator):
                             dest='prior_samples',
                             metavar='N',
                             help="number of batches of samples from prior")
-        parser.add_argument(
-            '--layer-repr',
-            action='store_true',
-            dest='inspect_layer_repr',
-            help='inspect layer representations. Generate samples '
-            'by sampling top layers once, then taking many '
-            'samples from a middle layer, and finally sample '
-            'the downstream layers from the conditional mode. '
-            'Do this for every layer.')
+        parser.add_argument('--layer-repr',
+                            action='store_true',
+                            dest='inspect_layer_repr',
+                            help='inspect layer representations. Generate '
+                            'samples by sampling top layers once, then taking '
+                            'many samples from a middle layer, and finally '
+                            'sample the downstream layers from the conditional '
+                            'mode. Do this for every layer.')
 
     @classmethod
     def _check_args(cls, args: argparse.Namespace) -> argparse.Namespace:
@@ -91,11 +90,6 @@ class Evaluator(BaseOfflineEvaluator):
                 "Loading weights from specific training step is not supported "
                 "for now. The model will be loaded from the last checkpoint.")
         return args
-
-
-def main():
-    evaluator = Evaluator(experiment_class=LVAEExperiment)
-    evaluator()
 
 
 def inspect_layer_repr(model, img_folder, n=8):
@@ -118,6 +112,11 @@ def inspect_layer_repr(model, img_folder, n=8):
         pad_value = img_grid_pad_value(sample)
         fname = os.path.join(img_folder, 'sample_mode_layer' + str(i) + '.png')
         save_image(sample, fname, nrow=n, pad_value=pad_value)
+
+
+def main():
+    evaluator = Evaluator(experiment_class=LVAEExperiment)
+    evaluator()
 
 
 if __name__ == "__main__":
