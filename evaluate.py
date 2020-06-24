@@ -4,15 +4,11 @@ Standalone script for a couple of simple evaluations/tests of trained models.
 
 import argparse
 import os
-import pickle
 import warnings
-from os import path
 
-import matplotlib.pyplot as plt
 import torch
 import torch.utils.data
 from boilr.eval import BaseOfflineEvaluator
-from boilr.utils import set_rnd_seed, get_date_str
 from boilr.utils.viz import img_grid_pad_value
 from torchvision.utils import save_image
 
