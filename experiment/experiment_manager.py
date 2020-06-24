@@ -133,14 +133,13 @@ class LVAEExperiment(VAEExperimentManager):
                             dest='dataset_name',
                             help="dataset: " + list_options(legal_datasets))
 
-        parser.add_argument(
-            '--likelihood',
-            type=str,
-            choices=legal_likelihoods,
-            metavar='NAME',
-            dest='likelihood',
-            help="likelihood: {}; default depends on dataset".format(
-                list_options(legal_likelihoods)))
+        parser.add_argument('--likelihood',
+                            type=str,
+                            choices=legal_likelihoods,
+                            metavar='NAME',
+                            dest='likelihood',
+                            help="likelihood: {}; the default depends on the "
+                            "dataset".format(list_options(legal_likelihoods)))
 
         parser.add_argument('--zdims',
                             nargs='+',
@@ -179,14 +178,14 @@ class LVAEExperiment(VAEExperimentManager):
                             dest='gated',
                             help='use gated layers in residual blocks')
 
-        parser.add_argument(
-            '--downsample',
-            nargs='+',
-            type=int,
-            default=[1, 1, 1],
-            metavar='N',
-            help='list of integers, each int is the number of downsampling'
-            ' steps (by a factor of 2) before each stochastic layer')
+        parser.add_argument('--downsample',
+                            nargs='+',
+                            type=int,
+                            default=[1, 1, 1],
+                            metavar='N',
+                            help='list of integers, each int is the number of '
+                            'downsampling steps (by a factor of 2) before each '
+                            'stochastic layer')
 
         parser.add_argument('--learn-top-prior',
                             action='store_true',
@@ -234,12 +233,12 @@ class LVAEExperiment(VAEExperimentManager):
                             help="nonlinear activation: " +
                             list_options(legal_nonlin))
 
-        parser.add_argument(
-            '--dropout',
-            type=float,
-            default=0.2,
-            metavar='D',
-            help='dropout probability (in deterministic layers)')
+        parser.add_argument('--dropout',
+                            type=float,
+                            default=0.2,
+                            metavar='D',
+                            help='dropout probability (in deterministic '
+                            'layers)')
 
         parser.add_argument('--freebits',
                             type=float,
