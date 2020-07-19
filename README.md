@@ -29,7 +29,7 @@ for PyTorch) and [multiobject](https://github.com/addtt/multi-object-datasets)
 
 ## Likelihood results
 
-Log likelihood bounds on the test set. Final results coming soon.
+Log likelihood bounds on the test set (average over 4 random seeds).
 
 |  dataset             | num layers | -ELBO        | - log _p(x)_ ≤ <br> [100 iws] | - log _p(x)_ ≤ <br> [1000 iws] |
 | -------------------- |:----------:|:------------:|:-------------:|:--------------:|
@@ -47,10 +47,12 @@ Note:
 - Bits per dimension in brackets.
 - 'iws' stands for importance weighted samples. More samples means tighter log
   likelihood lower bound. The bound converges to the actual log likelihood as 
-  the number of samples goes to infinity [5].
+  the number of samples goes to infinity [5]. Note that the model is always
+  trained with the ELBO (1 sample).
 - Each pixel in the images is modeled independently. The likelihood is Bernoulli
   for binary images, and discretized mixture of logistics with 10 
   components [6] otherwise.
+- One day I'll get around to evaluating the IW bound on all datasets with 10000 samples.
 
 
 ## Supported datasets
@@ -118,7 +120,7 @@ more variability in each row as we move to higher layers. When the sampling
 happens in the top layer (_i = L_), all samples are completely independent, 
 even within a row.
 
-#### Binarized MNIST: layers 4, 8, 10, and 12 (top)
+#### Binarized MNIST: layers 4, 8, 10, and 12 (top layer)
 
 ![MNIST layers 4](_readme_figs/layers_mnist/sample_mode_layer3.png)&nbsp;&nbsp;
 ![MNIST layers 8](_readme_figs/layers_mnist/sample_mode_layer7.png)
@@ -127,7 +129,7 @@ even within a row.
 ![MNIST layers 12](_readme_figs/layers_mnist/sample_mode_layer11.png)
 
 
-#### SVHN: layers 4, 10, 13, and 15 (top)
+#### SVHN: layers 4, 10, 13, and 15 (top layer)
 
 ![SVHN layers 4](_readme_figs/layers_svhn/sample_mode_layer3.png)&nbsp;&nbsp;
 ![SVHN layers 10](_readme_figs/layers_svhn/sample_mode_layer9.png)
@@ -136,7 +138,7 @@ even within a row.
 ![SVHN layers 15](_readme_figs/layers_svhn/sample_mode_layer14.png)
 
 
-#### CIFAR: layers 3, 7, 10, and 15 (top)
+#### CIFAR: layers 3, 7, 10, and 15 (top layer)
 
 ![CIFAR layers 3](_readme_figs/layers_cifar/sample_mode_layer2.png)&nbsp;&nbsp;
 ![CIFAR layers 7](_readme_figs/layers_cifar/sample_mode_layer6.png)
@@ -145,7 +147,7 @@ even within a row.
 ![CIFAR layers 15](_readme_figs/layers_cifar/sample_mode_layer14.png)
 
 
-#### CelebA: layers 6, 11, 16, and 20 (top)
+#### CelebA: layers 6, 11, 16, and 20 (top layer)
 
 ![CelebA layers 6](_readme_figs/layers_celeba/sample_mode_layer5.png)
 
@@ -156,7 +158,7 @@ even within a row.
 ![CelebA layers 20](_readme_figs/layers_celeba/sample_mode_layer19.png)
 
 
-#### Multi-dSprites: layers 3, 7, 10, and 12 (top)
+#### Multi-dSprites: layers 3, 7, 10, and 12 (top layer)
 
 ![MNIST layers 4](_readme_figs/layers_multidsprites/sample_mode_layer2.png)&nbsp;&nbsp;
 ![MNIST layers 8](_readme_figs/layers_multidsprites/sample_mode_layer6.png)
@@ -191,27 +193,13 @@ I did not perform an extensive hyperparameter search, but this worked pretty wel
   See code for details.
 - freebits=1.0 in experiments with more than 6 stochastic layers, and 0.5 for
   smaller models.
-- For everything else, see `_parse_args()` in `experiment/experiment_manager.py`.
+- For everything else, see `_add_args()` in `experiment/experiment_manager.py`.
 
 With these settings, the number of parameters is roughly 1M per stochastic
   layer. I tried to control for this by experimenting e.g. with half the number
   of layers but twice the number of residual blocks, but it looks like the number
   of stochastic layers is what matters the most.
 
-
-## Requirements
-
-Tested with:
-```
-python 3.7.6
-numpy 1.18.1
-torch 1.4.0
-torchvision 0.5.0
-matplotlib 3.1.2
-seaborn 0.9.0
-boilr 0.6.0
-multiobject 0.0.3
-```
 
 ## References
 
